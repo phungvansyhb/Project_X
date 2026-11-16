@@ -1,19 +1,103 @@
-import { getExtensionApi } from './storage';
+import {
+  getExtensionApi,
+  getSettings,
+  saveVocabItem,
+  VocabItem,
+  normalizePageUrl,
+} from './storage';
+import { translateText, TranslationResult } from '../background/translator';
 
 export type ExtensionMessage =
+  | {
+      type: 'TRANSLATE_TEXT';
+      text: string;
+      pageUrl?: string;
+      pageTitle?: string;
+      autoSave?: boolean;
+    }
   | { type: 'GET_ACTIVE_TAB_INFO' }
   | { type: 'HIGHLIGHT_ACTIVE_PAGE'; color?: string }
+  | { type: 'SCROLL_TO_VOCAB'; sourceText: string }
+  | { type: 'REFRESH_HIGHLIGHTS' }
   | { type: 'OPEN_SIDE_PANEL' }
-  | { type: 'OPEN_OPTIONS_PAGE' }
-  | { type: 'PING_BACKGROUND' };
+  | { type: 'OPEN_OPTIONS_PAGE' };
 
 export interface ActiveTabInfo {
   title: string;
   url: string;
+  normalizedUrl: string;
   favIconUrl?: string;
   selectionText?: string;
   wordCount?: number;
   headingCount?: number;
+  highlightedCount?: number;
+}
+
+export interface TranslationResponse {
+  ok: boolean;
+  result?: TranslationResult;
+  savedItem?: VocabItem;
+  error?: string;
+}
+
+/**
+ * Request translation via Background Service Worker (or direct fallback in Dev Workbench)
+ */
+export async function requestTranslation(params: {
+  text: string;
+  pageUrl?: string;
+  pageTitle?: string;
+  autoSave?: boolean;
+}): Promise<TranslationResponse> {
+  const api = getExtensionApi();
+  const cleanText = params.text.trim();
+  if (!cleanText) {
+    return { ok: false, error: 'Empty selection' };
+  }
+
+  // 1. Try sending message to Background Service Worker when running in browser extension context
+  if (api?.runtime?.sendMessage) {
+    try {
+      const response = (await api.runtime.sendMessage({
+        type: 'TRANSLATE_TEXT',
+        text: cleanText,
+        pageUrl: params.pageUrl || window.location.href,
+        pageTitle: params.pageTitle || document.title,
+        autoSave: params.autoSave ?? true,
+      })) as TranslationResponse | undefined;
+
+      if (response && response.ok && response.result) {
+        return response;
+      }
+    } catch {
+      // Fallback to direct translation when running in Vite Dev Workbench
+    }
+  }
+
+  // 2. Direct execution fallback (Vite Dev Workbench or extension page context)
+  try {
+    const settings = await getSettings();
+    const result = await translateText(cleanText, settings.targetLang, settings);
+    let savedItem: VocabItem | undefined;
+
+    if (params.autoSave ?? settings.autoTranslateOnSelect) {
+      const saved = await saveVocabItem({
+        sourceText: result.sourceText,
+        translatedText: result.translatedText,
+        targetLang: result.targetLang,
+        pageUrl: params.pageUrl || window.location.href,
+        pageTitle: params.pageTitle || document.title,
+      });
+      savedItem = saved.item;
+    }
+
+    return { ok: true, result, savedItem };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : 'Translation failed',
+    };
+  }
 }
 
 export async function getActiveTabInfo(): Promise<ActiveTabInfo> {
@@ -21,7 +105,8 @@ export async function getActiveTabInfo(): Promise<ActiveTabInfo> {
   if (api?.tabs?.query) {
     try {
       const [tab] = await api.tabs.query({ active: true, currentWindow: true });
-      if (tab?.id) {
+      if (tab?.id && tab.url) {
+        const normalizedUrl = normalizePageUrl(tab.url);
         try {
           const response = await api.tabs.sendMessage(tab.id, {
             type: 'GET_PAGE_METRICS',
@@ -29,7 +114,8 @@ export async function getActiveTabInfo(): Promise<ActiveTabInfo> {
           if (response) {
             return {
               title: tab.title || 'Active Tab',
-              url: tab.url || '',
+              url: tab.url,
+              normalizedUrl,
               favIconUrl: tab.favIconUrl,
               ...response,
             };
@@ -39,7 +125,8 @@ export async function getActiveTabInfo(): Promise<ActiveTabInfo> {
         }
         return {
           title: tab.title || 'Untitled Tab',
-          url: tab.url || 'chrome://newtab',
+          url: tab.url,
+          normalizedUrl,
           favIconUrl: tab.favIconUrl,
         };
       }
@@ -48,13 +135,38 @@ export async function getActiveTabInfo(): Promise<ActiveTabInfo> {
     }
   }
 
+  const fallbackUrl = window.location.href;
   return {
-    title: document.title || 'Extension Preview Tab',
-    url: window.location.href,
+    title: document.title || 'Chrome Extensions Documentation — Interactive Demo',
+    url: fallbackUrl,
+    normalizedUrl: normalizePageUrl(fallbackUrl),
     selectionText: window.getSelection()?.toString() || '',
     wordCount: 428,
     headingCount: 12,
   };
+}
+
+export async function scrollToVocabOnPage(sourceText: string): Promise<boolean> {
+  const api = getExtensionApi();
+  if (api?.tabs?.query) {
+    try {
+      const [tab] = await api.tabs.query({ active: true, currentWindow: true });
+      if (tab?.id) {
+        await api.tabs.sendMessage(tab.id, {
+          type: 'SCROLL_TO_VOCAB',
+          sourceText,
+        });
+        return true;
+      }
+    } catch {
+      // Fall through to window event for Dev Workbench
+    }
+  }
+
+  window.dispatchEvent(
+    new CustomEvent('project_x_scroll_to_vocab', { detail: { sourceText } })
+  );
+  return true;
 }
 
 export async function triggerPageHighlight(accentColor: string): Promise<boolean> {

@@ -7,7 +7,7 @@
 
 ## Unit Checklist & Functional Specifications
 
-### [ ] `UNIT-01`: Storage, Claymorphism Design System & Excel (`.xlsx`) Exporter
+### [x] `UNIT-01`: Storage, Claymorphism Design System & Excel (`.xlsx`) Exporter
 - **Files**: `src/shared/storage.ts`, `src/shared/styles.css`, `src/shared/excelExport.ts`
 - **Key Interfaces**:
   - `VocabItem`: `{ id, sourceText, translatedText, targetLang, pageUrl, pageTitle, createdAt }`
@@ -15,7 +15,7 @@
   - `src/shared/styles.css`: Implements Soft Pastel Claymorphism + Dark Clay tokens (`--clay-shadow-card`, `--clay-shadow-sm`, `--clay-shadow-inset`), `20px–24px` radii, `Plus Jakarta Sans` / `Nunito` typography, and tactile press-down micro-interactions per [`ui-design.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/inception/application-design/ui-design.md).
   - `exportVocabToExcel(items: VocabItem[], filename?: string)`: Generates a valid `.xlsx` binary Blob (ZIP with OpenXML worksheet) with headers `Source Text` and `Translated Meaning` and triggers browser download.
 
-### [ ] `UNIT-02`: Background Translation Service & Messaging
+### [x] `UNIT-02`: Background Translation Service & Messaging
 - **Files**: `src/background/translator.ts`, `src/background/index.ts`, `src/shared/messaging.ts`
 - **Key Functions**:
   - `translateText(text: string, targetLang: string, settings: ExtensionSettings): Promise<{ translatedText: string; detectedSourceLang?: string; provider: string }>`

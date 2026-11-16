@@ -108,3 +108,43 @@
 - **Artifacts & Files Updated**:
   - [`aidlc-docs/audit.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/audit.md) — Appended Prompt 7 audit log entry prior to committing.
 - **Verification & Gate Status**: Verified `git status`, created initial commit, and pushed to remote repository; remains ready at **Gate 1 Sign-Off** to begin Construction (`UNIT-01` → `UNIT-04`).
+
+---
+
+## [2026-11-15T19:32:05-08:00] — Prompt 8: Approve Gate 1 & Implement `UNIT-01`
+- **Phase / Stage**: `CONSTRUCTION / UNIT-01: Vocabulary Storage Schema, Claymorphism CSS Design System & Excel (.xlsx) Exporter`
+- **User Input**: `"Approve gate 1 and start UNIT-01"`
+- **Clarifications / Decisions**:
+  - Approved **Gate 1 Sign-Off** transitioning the project from `INCEPTION` to `CONSTRUCTION`.
+  - Executed `UNIT-01` implementation and build verification.
+- **Artifacts & Files Updated**:
+  - [`src/shared/storage.ts`](file:///home/antigravity/phungvansyhb/Project_X/src/shared/storage.ts) — Implemented `VocabItem`, `PageVocabGroup`, `normalizePageUrl`, URL-grouped CRUD helpers (`saveVocabItem`, `removeVocabItem`, `updateVocabItemMeaning`, `clearPageVocab`, `getVocabForPage`, `getAllVocabItems`), and translation/highlight settings.
+  - [`src/shared/styles.css`](file:///home/antigravity/phungvansyhb/Project_X/src/shared/styles.css) — Upgraded design system to **Soft Pastel Claymorphism + Dark Clay Mode** (3-layer clay shadows, `20px–24px` radii, `Plus Jakarta Sans` / `Nunito` typography, and tactile press-down button micro-interactions).
+  - [`src/shared/excelExport.ts`](file:///home/antigravity/phungvansyhb/Project_X/src/shared/excelExport.ts) — Implemented standalone OpenXML `.xlsx` workbook generator and downloader (`exportVocabToExcel`, `buildExcelBlob`) with `Source Text` and `Translated Meaning` columns.
+  - [`aidlc-docs/aidlc-state.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/aidlc-state.md) & [`aidlc-docs/construction/plans/construction-plan.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/construction/plans/construction-plan.md) — Marked Gate 1 and `UNIT-01` as completed `[x]`.
+  - [`aidlc-docs/audit.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/audit.md) — Appended Prompt 8 audit entry.
+- **Verification & Gate Status**: `npm run typecheck && npm run build` passed with 0 errors. Next unit in queue: **`UNIT-02` (Background Translation Service & Message Router)**.
+
+---
+
+## [2026-11-15T19:36:35-08:00] — Prompt 9: Implement `UNIT-02` (Background Translation Service & Message Router)
+- **Phase / Stage**: `CONSTRUCTION / UNIT-02: Background Translation Service & Message Router`
+- **User Input**: `"implement Unit-02"`
+- **Clarifications / Decisions**: Executed `UNIT-02` implementation and build verification.
+- **Artifacts & Files Updated**:
+  - [`src/background/translator.ts`](file:///home/antigravity/phungvansyhb/Project_X/src/background/translator.ts) — Implemented `translateText` supporting Free Google Translate + Free Dictionary API enrichment out-of-the-box, optional custom API keys (`gemini`, `openai`, `deepl`), and offline glossary fallback.
+  - [`src/shared/messaging.ts`](file:///home/antigravity/phungvansyhb/Project_X/src/shared/messaging.ts) — Implemented `requestTranslation`, `scrollToVocabOnPage`, and normalized URL active tab queries.
+  - [`src/background/index.ts`](file:///home/antigravity/phungvansyhb/Project_X/src/background/index.ts) — Implemented `TRANSLATE_TEXT` message handler with auto-save to `vocabByUrl` and right-click context menu translation (`Translate & Highlight with Project X`).
+  - [`aidlc-docs/aidlc-state.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/aidlc-state.md) & [`aidlc-docs/construction/plans/construction-plan.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/construction/plans/construction-plan.md) — Marked `UNIT-02` as completed `[x]`.
+  - [`aidlc-docs/audit.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/audit.md) — Appended Prompt 9 audit entry.
+- **Verification & Gate Status**: `npm run typecheck && npm run build` passed with 0 errors. Next unit in queue: **`UNIT-03` (Content Script — Shadow DOM Claymorphism Selection Popup, `CSS.highlights` Engine & Hover Tooltip)**.
+
+---
+
+## [2026-11-15T19:43:49-08:00] — Prompt 10: Commit & Push `UNIT-01` and `UNIT-02` to Git
+- **Phase / Stage**: `CONSTRUCTION / Version Control Checkpoint after UNIT-01 & UNIT-02`
+- **User Input**: `"commit and push to git"`
+- **Clarifications / Decisions**: Commit and push completed `UNIT-01` (Vocabulary Storage, Claymorphism CSS Design System & `.xlsx` Exporter) and `UNIT-02` (Background Translation Service & Message Router) along with updated AI-DLC tracking artifacts to `origin/main`.
+- **Artifacts & Files Updated**:
+  - [`aidlc-docs/audit.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/audit.md) — Appended Prompt 10 audit log entry prior to committing.
+- **Verification & Gate Status**: Committed and pushed to `origin/main`; next unit in queue remains **`UNIT-03` (Content Script — Shadow DOM Claymorphism Selection Popup, `CSS.highlights` Engine & Hover Tooltip)**.
