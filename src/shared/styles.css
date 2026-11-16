@@ -234,14 +234,11 @@ textarea {
   box-shadow: var(--clay-shadow-inset);
 }
 
-.btn-emerald,
-.clay-btn-emerald {
-  background: linear-gradient(145deg, #34d399 0%, #10b981 100%);
-  color: #ffffff;
-  box-shadow:
-    0 10px 20px -4px rgba(16, 185, 129, 0.4),
-    inset 0 4px 8px 0 rgba(255, 255, 255, 0.45),
-    inset 0 -5px 10px 0 rgba(6, 78, 59, 0.35);
+.btn:disabled,
+.clay-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .btn-ghost,

@@ -18,6 +18,9 @@ function bundleExtensionScriptsPlugin() {
       await build({
         configFile: false,
         logLevel: 'silent',
+        define: {
+          'process.env.NODE_ENV': JSON.stringify('production'),
+        },
         resolve: {
           alias: { '@': resolve(__dirname, 'src') },
         },
@@ -42,6 +45,9 @@ function bundleExtensionScriptsPlugin() {
       await build({
         configFile: false,
         logLevel: 'silent',
+        define: {
+          'process.env.NODE_ENV': JSON.stringify('production'),
+        },
         resolve: {
           alias: { '@': resolve(__dirname, 'src') },
         },

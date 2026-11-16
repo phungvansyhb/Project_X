@@ -1,5 +1,3 @@
-import { useEffect, useState, useCallback } from 'react';
-
 export type ThemeMode = 'system' | 'light' | 'dark';
 export type TranslationProvider = 'google' | 'gemini' | 'openai' | 'deepl';
 export type SelectionTriggerMode = 'auto' | 'icon' | 'manual';
@@ -18,6 +16,7 @@ export interface VocabItem {
   id: string;
   sourceText: string;
   translatedText: string;
+  phonetic?: string;
   targetLang: string;
   pageUrl: string;
   pageTitle: string;
@@ -87,6 +86,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
           id: 'vocab-demo-1',
           sourceText: 'Manifest V3',
           translatedText: 'Tệp kê khai phiên bản 3 (Chuẩn tiện ích mở rộng hiện đại)',
+          phonetic: '/ˈmænɪfɛst viː θriː/',
           targetLang: 'vi',
           pageUrl: DEMO_PAGE_URL,
           pageTitle: 'Chrome Extensions Documentation — Interactive Demo',
@@ -96,6 +96,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
           id: 'vocab-demo-2',
           sourceText: 'Claymorphism',
           translatedText: 'Phong cách thiết kế đất sét 3D mềm mại',
+          phonetic: '/ˈkleɪmɔːrfɪzəm/',
           targetLang: 'vi',
           pageUrl: DEMO_PAGE_URL,
           pageTitle: 'Chrome Extensions Documentation — Interactive Demo',
@@ -117,7 +118,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
 };
 
 export const STORAGE_KEY = 'project_x_settings';
-const FALLBACK_CHANNEL = 'project_x_storage_sync';
+export const FALLBACK_CHANNEL = 'project_x_storage_sync';
 
 /**
  * Normalize a webpage URL so words saved on the same page match consistently
@@ -238,6 +239,7 @@ export async function resetSettings(): Promise<ExtensionSettings> {
 export async function saveVocabItem(input: {
   sourceText: string;
   translatedText: string;
+  phonetic?: string;
   targetLang?: string;
   pageUrl: string;
   pageTitle?: string;
@@ -258,6 +260,7 @@ export async function saveVocabItem(input: {
     id: existingItem?.id || `vocab-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     sourceText: input.sourceText.trim().replace(/\s+/g, ' '),
     translatedText: input.translatedText.trim(),
+    phonetic: input.phonetic?.trim() || existingItem?.phonetic,
     targetLang: input.targetLang || current.targetLang,
     pageUrl: normalizedUrl,
     pageTitle: input.pageTitle || existingGroup.pageTitle || 'Web Article',
@@ -349,6 +352,48 @@ export async function updateVocabItemMeaning(
   });
 }
 
+export async function updateVocabItemPhonetic(
+  pageUrl: string,
+  sourceTextOrId: string,
+  phonetic: string
+): Promise<ExtensionSettings> {
+  const cleanPhonetic = phonetic.trim();
+  const current = await getSettings();
+  if (!cleanPhonetic) return current;
+
+  const normalizedUrl = normalizePageUrl(pageUrl);
+  const group = current.vocabByUrl[normalizedUrl];
+  if (!group) return current;
+
+  const nextItems: Record<string, VocabItem> = {};
+  const targetKey = normalizeWordKey(sourceTextOrId);
+  let changed = false;
+
+  for (const [key, value] of Object.entries(group.items)) {
+    if ((key === targetKey || value.id === sourceTextOrId) && value.phonetic !== cleanPhonetic) {
+      nextItems[key] = {
+        ...value,
+        phonetic: cleanPhonetic,
+      };
+      changed = true;
+    } else {
+      nextItems[key] = value;
+    }
+  }
+
+  if (!changed) return current;
+
+  return updateSettings({
+    vocabByUrl: {
+      ...current.vocabByUrl,
+      [normalizedUrl]: {
+        ...group,
+        items: nextItems,
+      },
+    },
+  });
+}
+
 export async function clearPageVocab(pageUrl: string): Promise<ExtensionSettings> {
   const current = await getSettings();
   const normalizedUrl = normalizePageUrl(pageUrl);
@@ -375,98 +420,4 @@ export function getAllVocabItems(settings: ExtensionSettings): VocabItem[] {
     }
   }
   return all.sort((a, b) => b.createdAt - a.createdAt);
-}
-
-/**
- * React hook for reactive extension settings & vocabulary across Side Panel, Options Page, and Popup
- */
-export function useExtensionSettings() {
-  const [settings, setSettings] = useState<ExtensionSettings>(DEFAULT_SETTINGS);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let mounted = true;
-    getSettings().then((initial) => {
-      if (mounted) {
-        setSettings(initial);
-        setLoading(false);
-      }
-    });
-
-    const api = getExtensionApi();
-    if (api?.storage?.onChanged) {
-      const listener = (
-        changes: { [key: string]: chrome.storage.StorageChange },
-        areaName: string
-      ) => {
-        if (areaName === 'local' && changes[STORAGE_KEY]?.newValue) {
-          const nextVal = changes[STORAGE_KEY].newValue as Partial<ExtensionSettings>;
-          setSettings({
-            ...DEFAULT_SETTINGS,
-            ...nextVal,
-            vocabByUrl: nextVal.vocabByUrl || {},
-          });
-        }
-      };
-      api.storage.onChanged.addListener(listener);
-      return () => {
-        mounted = false;
-        api.storage.onChanged.removeListener(listener);
-      };
-    }
-
-    const handleCustom = (e: Event) => {
-      const customEvent = e as CustomEvent<ExtensionSettings>;
-      if (customEvent.detail) {
-        setSettings(customEvent.detail);
-      }
-    };
-    window.addEventListener(FALLBACK_CHANNEL, handleCustom);
-
-    let bc: BroadcastChannel | undefined;
-    if (typeof BroadcastChannel !== 'undefined') {
-      bc = new BroadcastChannel(FALLBACK_CHANNEL);
-      bc.onmessage = (event) => {
-        if (event.data) {
-          setSettings(event.data as ExtensionSettings);
-        }
-      };
-    }
-
-    return () => {
-      mounted = false;
-      window.removeEventListener(FALLBACK_CHANNEL, handleCustom);
-      bc?.close();
-    };
-  }, []);
-
-  const saveSettings = useCallback(async (patch: Partial<ExtensionSettings>) => {
-    const updated = await updateSettings(patch);
-    setSettings(updated);
-    return updated;
-  }, []);
-
-  const restoreDefaults = useCallback(async () => {
-    const defaults = await resetSettings();
-    setSettings(defaults);
-    return defaults;
-  }, []);
-
-  return { settings, loading, saveSettings, restoreDefaults };
-}
-
-/**
- * Apply Claymorphism theme, accent & highlight variables to document root
- */
-export function useThemeSync(settings: ExtensionSettings) {
-  useEffect(() => {
-    const root = document.documentElement;
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const isDark =
-      settings.theme === 'dark' || (settings.theme === 'system' && prefersDark);
-
-    root.setAttribute('data-theme', isDark ? 'dark' : 'light');
-    root.setAttribute('data-accent', settings.accentColor);
-    root.setAttribute('data-highlight', settings.highlightColor || 'yellow');
-  }, [settings.theme, settings.accentColor, settings.highlightColor]);
 }

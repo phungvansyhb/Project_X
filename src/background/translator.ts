@@ -63,37 +63,134 @@ async function translateWithGoogleFree(
   throw new Error('Empty response from Google Translate');
 }
 
+const OFFLINE_GLOSSARY_IPA: Record<string, string> = {
+  'manifest v3': '/ˈmænɪfɛst viː θriː/',
+  'claymorphism': '/ˈkleɪmɔːrfɪzəm/',
+  'service worker': '/ˈsɜːrvɪs ˈwɜːrkər/',
+  'content script': '/ˈkɑːntɛnt skrɪpt/',
+  'side panel': '/saɪd ˈpænəl/',
+  'custom highlight api': '/ˈkʌstəm ˈhaɪlaɪt eɪ piː aɪ/',
+  'shadow dom': '/ˈʃædoʊ dɑːm/',
+  'vocabulary': '/voʊˈkæbjəlɛri/',
+  'extension': '/ɪkˈstɛnʃən/',
+  'browser': '/ˈbraʊzər/',
+  'storage': '/ˈstɔːrɪdʒ/',
+  'highlight': '/ˈhaɪlaɪt/',
+  'translate': '/trænsˈleɪt/',
+};
+
+interface DictionaryWordMeta {
+  phonetic?: string;
+  partOfSpeech?: string;
+  definition?: string;
+}
+
+const wordMetaCache = new Map<string, DictionaryWordMeta>();
+
+function stripIpaDelimiters(ipa: string): string {
+  return ipa.trim().replace(/^[/[]+/, '').replace(/[/\]]+$/, '').trim();
+}
+
 /**
- * Optional Free Dictionary API enrichment (phonetics / part of speech for single English words)
+ * Free Dictionary API lookup for a single English word (with timeout + in-memory cache)
  */
-async function fetchWordDictionaryMeta(
-  word: string
-): Promise<{ phonetic?: string; partOfSpeech?: string; definition?: string }> {
-  const trimmed = word.trim();
-  if (!trimmed || /\s/.test(trimmed) || trimmed.length > 35) {
+async function fetchSingleWordMeta(word: string): Promise<DictionaryWordMeta> {
+  const cleaned = word
+    .trim()
+    .replace(/^[^a-zA-Z0-9'-]+|[^a-zA-Z0-9'-]+$/g, '')
+    .toLowerCase();
+  if (!cleaned || cleaned.length > 35 || !/[a-z]/.test(cleaned)) {
     return {};
   }
 
+  const cached = wordMetaCache.get(cleaned);
+  if (cached) return cached;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 2800);
+
   try {
     const res = await fetch(
-      `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(
-        trimmed.toLowerCase()
-      )}`
+      `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(cleaned)}`,
+      { signal: controller.signal }
     );
-    if (!res.ok) return {};
+    if (!res.ok) {
+      wordMetaCache.set(cleaned, {});
+      return {};
+    }
     const data = await res.json();
     if (Array.isArray(data) && data[0]) {
       const entry = data[0];
-      const phonetic = entry.phonetic || entry.phonetics?.find((p: { text?: string }) => p.text)?.text;
+      const rawPhonetic: string | undefined =
+        entry.phonetic?.trim() ||
+        entry.phonetics
+          ?.find((p: { text?: string }) => typeof p.text === 'string' && p.text.trim())
+          ?.text?.trim();
       const firstMeaning = entry.meanings?.[0];
-      const partOfSpeech = firstMeaning?.partOfSpeech;
-      const definition = firstMeaning?.definitions?.[0]?.definition;
-      return { phonetic, partOfSpeech, definition };
+      const meta: DictionaryWordMeta = {
+        phonetic: rawPhonetic || undefined,
+        partOfSpeech: firstMeaning?.partOfSpeech,
+        definition: firstMeaning?.definitions?.[0]?.definition,
+      };
+      wordMetaCache.set(cleaned, meta);
+      return meta;
     }
   } catch {
-    // Ignore dictionary enrichment errors
+    // Ignore dictionary enrichment / timeout errors
+  } finally {
+    clearTimeout(timeoutId);
   }
   return {};
+}
+
+/**
+ * Optional Free Dictionary API enrichment (IPA phonetics / part of speech for words & short phrases)
+ */
+async function fetchWordDictionaryMeta(text: string): Promise<DictionaryWordMeta> {
+  const normalized = text.trim().replace(/\s+/g, ' ');
+  if (!normalized) return {};
+
+  const offlineIpa = OFFLINE_GLOSSARY_IPA[normalized.toLowerCase()];
+  const words = normalized.split(' ');
+
+  if (words.length === 1) {
+    const meta = await fetchSingleWordMeta(words[0]);
+    return {
+      ...meta,
+      phonetic: meta.phonetic || offlineIpa,
+    };
+  }
+
+  if (offlineIpa) {
+    return { phonetic: offlineIpa };
+  }
+
+  if (words.length <= 5) {
+    const metas = await Promise.all(words.map((w) => fetchSingleWordMeta(w)));
+    const hasAnyIpa = metas.some((m) => Boolean(m.phonetic));
+    if (hasAnyIpa) {
+      const joined = words
+        .map((w, idx) => {
+          const ipa = metas[idx]?.phonetic;
+          return ipa ? stripIpaDelimiters(ipa) : w.toLowerCase();
+        })
+        .filter(Boolean)
+        .join(' ');
+      if (joined) {
+        return { phonetic: `/${joined}/` };
+      }
+    }
+  }
+
+  return {};
+}
+
+/**
+ * Standalone IPA lookup helper (used for hover backfill on previously saved words)
+ */
+export async function lookupIpa(rawText: string): Promise<string | undefined> {
+  const meta = await fetchWordDictionaryMeta(rawText);
+  return meta.phonetic;
 }
 
 /**

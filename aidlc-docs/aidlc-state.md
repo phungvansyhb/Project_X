@@ -4,8 +4,8 @@
 - **Project Name**: Project X — Web Selection Translator & Vocabulary Highlighter
 - **Project Type**: Brownfield (Base MV3 Vite + React 19 + TypeScript scaffold completed; evolved into Vocabulary Translator & Highlighter with **Claymorphism UI**)
 - **Active Phase**: `OPERATIONS` (Construction Phase `UNIT-01` → `UNIT-04` and Build & Test Verification Completed)
-- **Active Stage**: Completed `Stage 3.1` & `Stage 3.2` — Ready for Release / User Testing
-- **Last Updated**: `2026-11-15T20:05:30-08:00`
+- **Active Stage**: Completed `Stage 3.1` & `Stage 3.2` + Extension Runtime/Manifest Debug Fix — Ready for Release / User Testing
+- **Last Updated**: `2026-11-16T13:45:00+07:00`
 
 ---
 

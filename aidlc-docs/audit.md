@@ -214,3 +214,115 @@
 - **Artifacts & Files Updated**:
   - [`aidlc-docs/audit.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/audit.md) — Appended Prompt 15 audit entry prior to committing.
 - **Verification & Gate Status**: Committed and pushed to `origin/main`. All Construction and Operations milestones complete.
+
+
+---
+
+## [2026-11-16T13:21:00+07:00] — Prompt 16: Debug & Fix Extension Manifest & Runtime Errors
+- **Phase / Stage**: `OPERATIONS / Extension Debugging & Runtime Hardening`
+- **User Input**: `"help me debug extensions error"`
+- **Clarifications / Decisions**:
+  - Audited `public/manifest.json`, `vite.config.ts`, `src/shared/storage.ts`, `src/background/index.ts`, `src/content/index.ts`, and generated `dist/` bundles for Chrome MV3 errors.
+  - Identified and resolved 4 root causes of extension errors:
+    1. **`ReferenceError: process is not defined` in `dist/background.js` & `dist/content.js`**: `src/shared/storage.ts` imported React hooks, pulling CJS `react` (with `process.env.NODE_ENV`) into both the Service Worker and Content Script bundles, while `vite.config.ts` `lib` builds did not define `process.env.NODE_ENV`.
+    2. **Chrome MV3 Manifest Warning/Error (`sidebar_action` / `browser_specific_settings`)**: Removed Firefox-only keys from `public/manifest.json` and added `"tabs"` permission for reliable `tab.url` / `tab.title` access from Side Panel and Popup.
+    3. **Context Menu Registration Race (`Unchecked runtime.lastError`)**: Serialized `setupContextMenu()` in `src/background/index.ts`, swallowed `runtime.lastError` safely, and added `runtime.onStartup` sync.
+    4. **Content Script Listener & Sync Cleanup**: Fixed `return false` vs `return true` on synchronous vs async `onMessage` responses and scoped `BroadcastChannel` sync to non-extension fallback mode.
+- **Artifacts & Files Updated**:
+  - Created [`src/shared/storageHooks.ts`](file:///c:/Users/63200467/Documents/codes/Project_X/src/shared/storageHooks.ts) — Extracted `useExtensionSettings` and `useThemeSync` React hooks away from [`src/shared/storage.ts`](file:///c:/Users/63200467/Documents/codes/Project_X/src/shared/storage.ts).
+  - Updated [`src/options/OptionsApp.tsx`](file:///c:/Users/63200467/Documents/codes/Project_X/src/options/OptionsApp.tsx), [`src/popup/PopupApp.tsx`](file:///c:/Users/63200467/Documents/codes/Project_X/src/popup/PopupApp.tsx), and [`src/sidepanel/SidePanelApp.tsx`](file:///c:/Users/63200467/Documents/codes/Project_X/src/sidepanel/SidePanelApp.tsx) to import hooks from `src/shared/storageHooks.ts`.
+  - Updated [`vite.config.ts`](file:///c:/Users/63200467/Documents/codes/Project_X/vite.config.ts) — Added `define: { 'process.env.NODE_ENV': JSON.stringify('production') }` to `content.js` and `background.js` library builds.
+  - Updated [`public/manifest.json`](file:///c:/Users/63200467/Documents/codes/Project_X/public/manifest.json) — Removed Firefox-only `sidebar_action` and `browser_specific_settings`; added `"tabs"` permission.
+  - Updated [`src/background/index.ts`](file:///c:/Users/63200467/Documents/codes/Project_X/src/background/index.ts) and [`src/content/index.ts`](file:///c:/Users/63200467/Documents/codes/Project_X/src/content/index.ts).
+  - Updated [`aidlc-docs/aidlc-state.md`](file:///c:/Users/63200467/Documents/codes/Project_X/aidlc-docs/aidlc-state.md) and [`aidlc-docs/audit.md`](file:///c:/Users/63200467/Documents/codes/Project_X/aidlc-docs/audit.md).
+- **Verification & Gate Status**:
+  - `npm run typecheck` and `npm run build` passed with 0 errors.
+  - Verified `dist/background.js` (14,600 bytes) and `dist/content.js` (29,577 bytes) contain zero `process` or `React` references.
+  - Verified `dist/background.js` executes cleanly in a headless Service Worker `vm` sandbox (`SW_SMOKE_OK`).
+
+
+---
+
+## [2026-11-16T13:37:00+07:00] — Prompt 17: Theme-Aware Export Excel Buttons
+- **Phase / Stage**: `OPERATIONS / UI Theme Consistency Polish`
+- **User Input**: `"The color of Export Excel button should follow extension theme"`
+- **Clarifications / Decisions**:
+  - Replaced hardcoded emerald green (`btn-emerald`) on all **Export Excel** buttons with theme-reactive `btn-primary` (`--clay-accent-gradient` + `--clay-accent-shadow` synced via `data-theme` and `data-accent`).
+  - Changed `Backup Raw JSON` in the Options Storage tab to `btn-secondary` so `Export All to Excel (.xlsx)` remains the primary themed CTA.
+  - Added `:disabled` styling for `.btn` / `.clay-btn` and removed the unused `.btn-emerald` / `.clay-btn-emerald` class from `src/shared/styles.css`.
+- **Artifacts & Files Updated**:
+  - [`src/sidepanel/SidePanelApp.tsx`](file:///c:/Users/63200467/Documents/codes/Project_X/src/sidepanel/SidePanelApp.tsx) — Updated `Export Excel` button to `btn-primary`.
+  - [`src/popup/PopupApp.tsx`](file:///c:/Users/63200467/Documents/codes/Project_X/src/popup/PopupApp.tsx) — Updated `Export Excel` button to `btn-primary`.
+  - [`src/options/OptionsApp.tsx`](file:///c:/Users/63200467/Documents/codes/Project_X/src/options/OptionsApp.tsx) — Updated header `Export All Excel` and Storage tab `Export All to Excel (.xlsx)` buttons to `btn-primary`, and `Backup Raw JSON` to `btn-secondary`.
+  - [`src/shared/styles.css`](file:///c:/Users/63200467/Documents/codes/Project_X/src/shared/styles.css) — Replaced `.btn-emerald` / `.clay-btn-emerald` with `.btn:disabled, .clay-btn:disabled` styling.
+  - [`aidlc-docs/aidlc-state.md`](file:///c:/Users/63200467/Documents/codes/Project_X/aidlc-docs/aidlc-state.md) & [`aidlc-docs/audit.md`](file:///c:/Users/63200467/Documents/codes/Project_X/aidlc-docs/audit.md).
+- **Verification & Gate Status**: `npm run typecheck` and `npm run build` passed with exit code `0`.
+
+
+---
+
+## [2026-11-16T13:45:00+07:00] — Prompt 18: Display IPA Phonetics on Hover Tooltip & Saved Vocabulary
+- **Phase / Stage**: `OPERATIONS / Feature Enhancement — Hover IPA Display`
+- **User Input**: `"when a text was translated, hover on it will also display ipa"`
+- **Clarifications / Decisions**:
+  - Added `phonetic?: string` to `VocabItem` in `src/shared/storage.ts` and persisted `result.phonetic` across all `saveVocabItem` flows (auto-save in background, context menu, manual `"Save & Highlight"` button, and Dev Workbench fallback).
+  - Enhanced `src/background/translator.ts` (`fetchWordDictionaryMeta` & `lookupIpa`) to resolve IPA for single words, short phrases (up to 5 words), and offline glossary terms with in-memory caching and `AbortController` timeouts.
+  - Added `FETCH_IPA` background message route and `requestIpa` helper so hovering previously saved words without stored IPA lazily fetches, displays, and backfills `phonetic` via `updateVocabItemPhonetic`.
+  - Updated `showHoverTooltip` and `.px-source-wrap` / `.px-phonetic` layout in `src/content/index.ts`, plus `SidePanelApp.tsx` and `PopupApp.tsx` to display IPA cleanly.
+- **Artifacts & Files Updated**:
+  - [`src/shared/storage.ts`](file:///c:/Users/63200467/Documents/codes/Project_X/src/shared/storage.ts)
+  - [`src/background/translator.ts`](file:///c:/Users/63200467/Documents/codes/Project_X/src/background/translator.ts)
+  - [`src/background/index.ts`](file:///c:/Users/63200467/Documents/codes/Project_X/src/background/index.ts)
+  - [`src/shared/messaging.ts`](file:///c:/Users/63200467/Documents/codes/Project_X/src/shared/messaging.ts)
+  - [`src/content/index.ts`](file:///c:/Users/63200467/Documents/codes/Project_X/src/content/index.ts)
+  - [`src/sidepanel/SidePanelApp.tsx`](file:///c:/Users/63200467/Documents/codes/Project_X/src/sidepanel/SidePanelApp.tsx)
+  - [`src/popup/PopupApp.tsx`](file:///c:/Users/63200467/Documents/codes/Project_X/src/popup/PopupApp.tsx)
+  - [`aidlc-docs/aidlc-state.md`](file:///c:/Users/63200467/Documents/codes/Project_X/aidlc-docs/aidlc-state.md) & [`aidlc-docs/audit.md`](file:///c:/Users/63200467/Documents/codes/Project_X/aidlc-docs/audit.md)
+- **Verification & Gate Status**: `npm run typecheck`, `npm run build`, and Service Worker `vm` `FETCH_IPA` smoke test passed with exit code `0`.
+
+
+---
+
+## [2026-11-16T13:47:00+07:00] — Prompt 19: Commit & Push Extension Fixes, Theme Export Button, and Hover IPA
+- **Phase / Stage**: `OPERATIONS / Version Control Checkpoint`
+- **User Input**: `"commit and push"`
+- **Clarifications / Decisions**: Stage, commit, and push extension runtime/manifest fixes, themed Export Excel buttons, hover IPA display, and updated AI-DLC tracking docs to `origin/main`.
+- **Artifacts & Files Updated**:
+  - [`aidlc-docs/audit.md`](file:///c:/Users/63200467/Documents/codes/Project_X/aidlc-docs/audit.md) — Appended Prompt 19 audit entry prior to committing.
+- **Verification & Gate Status**: Staged and committed locally on `main`; `git push origin main` blocked by remote endpoint error (`fatal: https://github.com/phungvansyhb/Project_X.git/info/refs not valid: is this a git repository?`).
+
+
+---
+
+## [2026-11-16T13:49:00+07:00] — Prompt 20: Generate Git Patch File for Blocked Push
+- **Phase / Stage**: `OPERATIONS / Offline Git Change Export`
+- **User Input**: `"công ty tôi chặn push code , hãy tạo file git change"`
+- **Clarifications / Decisions**: Generated a UTF-8 `git format-patch` file (`project-x-changes.patch`) from `origin/main..HEAD` so all committed changes can be transferred and applied on another machine via `git am project-x-changes.patch` or `git apply project-x-changes.patch`.
+- **Artifacts & Files Updated**:
+  - [`aidlc-docs/audit.md`](file:///c:/Users/63200467/Documents/codes/Project_X/aidlc-docs/audit.md) — Appended Prompt 20 audit entry.
+  - [`project-x-changes.patch`](file:///c:/Users/63200467/Documents/codes/Project_X/project-x-changes.patch) — Generated Git patch file containing all changes ahead of `origin/main`.
+- **Verification & Gate Status**: Verified patch applies cleanly (`git apply --stat` and `git apply --check` in a detached test worktree/index check).
+
+---
+
+## [2026-11-15T22:51:30-08:00] — Prompt 21: Apply Attached Patch (`project-x-changes.patch`)
+- **Phase / Stage**: `OPERATIONS / Patch Integration & Build Verification`
+- **User Input**: `"apply change from patch file"` (`file:///home/antigravity/project-x-changes.patch`)
+- **Clarifications / Decisions**:
+  - Applied `/home/antigravity/project-x-changes.patch` (`fix(extension): resolve MV3 runtime/manifest errors, theme Export Excel buttons, and display IPA on hover`) to `/home/antigravity/phungvansyhb/Project_X`.
+- **Artifacts & Files Updated**:
+  - Applied patch across 15 files:
+    - Created [`src/shared/storageHooks.ts`](file:///home/antigravity/phungvansyhb/Project_X/src/shared/storageHooks.ts)
+    - Updated [`public/manifest.json`](file:///home/antigravity/phungvansyhb/Project_X/public/manifest.json), [`vite.config.ts`](file:///home/antigravity/phungvansyhb/Project_X/vite.config.ts), [`src/background/index.ts`](file:///home/antigravity/phungvansyhb/Project_X/src/background/index.ts), [`src/background/translator.ts`](file:///home/antigravity/phungvansyhb/Project_X/src/background/translator.ts), [`src/content/index.ts`](file:///home/antigravity/phungvansyhb/Project_X/src/content/index.ts), [`src/shared/messaging.ts`](file:///home/antigravity/phungvansyhb/Project_X/src/shared/messaging.ts), [`src/shared/storage.ts`](file:///home/antigravity/phungvansyhb/Project_X/src/shared/storage.ts), [`src/shared/styles.css`](file:///home/antigravity/phungvansyhb/Project_X/src/shared/styles.css), [`src/sidepanel/SidePanelApp.tsx`](file:///home/antigravity/phungvansyhb/Project_X/src/sidepanel/SidePanelApp.tsx), [`src/popup/PopupApp.tsx`](file:///home/antigravity/phungvansyhb/Project_X/src/popup/PopupApp.tsx), [`src/options/OptionsApp.tsx`](file:///home/antigravity/phungvansyhb/Project_X/src/options/OptionsApp.tsx), and [`aidlc-docs/aidlc-state.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/aidlc-state.md).
+  - Appended Prompt 21 audit entry to [`aidlc-docs/audit.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/audit.md).
+- **Verification & Gate Status**: `git apply` succeeded cleanly and `npm run typecheck && npm run build` passed with exit code `0`.
+
+---
+
+## [2026-11-15T22:55:06-08:00] — Prompt 22: Commit & Push Applied Patch Changes to Git (Excluding Patch File)
+- **Phase / Stage**: `OPERATIONS / Version Control Release Checkpoint`
+- **User Input**: `"commit and push, do not include path file"`
+- **Clarifications / Decisions**: Stage, commit, and push all applied changes (MV3 runtime/manifest fixes, theme-aware Export Excel buttons, IPA phonetics on hover & saved vocabulary, and AI-DLC state/audit updates) to `origin/main` while excluding `project-x-changes.patch`.
+- **Artifacts & Files Updated**:
+  - [`aidlc-docs/audit.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/audit.md) — Appended Prompt 22 audit entry prior to committing.
+- **Verification & Gate Status**: Verified `git status` excludes `.patch` files; committed and pushed to `origin/main`.

@@ -13,8 +13,6 @@ import {
   FileSpreadsheet,
 } from 'lucide-react';
 import {
-  useExtensionSettings,
-  useThemeSync,
   getAllVocabItems,
   SUPPORTED_LANGUAGES,
   ThemeMode,
@@ -23,6 +21,7 @@ import {
   HighlightColor,
   ExtensionSettings,
 } from '../shared/storage';
+import { useExtensionSettings, useThemeSync } from '../shared/storageHooks';
 import { openSidePanelFromWindow } from '../shared/messaging';
 import { exportVocabToExcel } from '../shared/excelExport';
 
@@ -124,7 +123,7 @@ export const OptionsApp: React.FC<{ embedded?: boolean }> = ({ embedded = false 
           )}
           <button
             type="button"
-            className="btn btn-emerald"
+            className="btn btn-primary"
             onClick={handleExportExcel}
             disabled={allWords.length === 0}
           >
@@ -571,7 +570,7 @@ export const OptionsApp: React.FC<{ embedded?: boolean }> = ({ embedded = false 
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                 <button
                   type="button"
-                  className="btn btn-emerald"
+                  className="btn btn-primary"
                   onClick={handleExportExcel}
                   disabled={allWords.length === 0}
                 >
@@ -580,7 +579,7 @@ export const OptionsApp: React.FC<{ embedded?: boolean }> = ({ embedded = false 
                 </button>
                 <button
                   type="button"
-                  className="btn btn-primary"
+                  className="btn btn-secondary"
                   onClick={handleExportJson}
                 >
                   <Download size={14} />

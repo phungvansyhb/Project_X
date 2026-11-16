@@ -4,12 +4,13 @@ import {
   getVocabForPage,
   saveVocabItem,
   removeVocabItem,
+  updateVocabItemPhonetic,
   ExtensionSettings,
   VocabItem,
   HighlightColor,
   STORAGE_KEY,
 } from '../shared/storage';
-import { requestTranslation } from '../shared/messaging';
+import { requestTranslation, requestIpa } from '../shared/messaging';
 
 interface HighlightedRangeEntry {
   range: Range;
@@ -237,8 +238,9 @@ const SHADOW_CLAY_CSS = `
 
   .px-source-wrap {
     display: flex;
-    align-items: center;
-    gap: 7px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
     min-width: 0;
   }
 
@@ -249,13 +251,17 @@ const SHADOW_CLAY_CSS = `
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 190px;
+    max-width: 215px;
   }
 
   .px-phonetic {
-    font-size: 11px;
+    font-family: 'Lucida Sans Unicode', 'DejaVu Sans', 'Segoe UI', Arial, sans-serif;
+    font-size: 12px;
     font-weight: 600;
     color: var(--clay-text-muted);
+    letter-spacing: 0.01em;
+    overflow-wrap: anywhere;
+    max-width: 225px;
   }
 
   .px-meaning-box {
@@ -701,6 +707,7 @@ export class ContentHighlighterController {
           const saved = await saveVocabItem({
             sourceText: result.sourceText,
             translatedText: result.translatedText,
+            phonetic: result.phonetic,
             targetLang: result.targetLang,
             pageUrl: window.location.href,
             pageTitle: document.title,
@@ -749,7 +756,10 @@ export class ContentHighlighterController {
     tooltip.innerHTML = `
       <div class="px-header">
         <div class="px-source-wrap">
-          <span class="px-source-word">${escapeHtml(item.sourceText)}</span>
+          <span class="px-source-word" title="${escapeHtml(item.sourceText)}">${escapeHtml(item.sourceText)}</span>
+          <span class="px-phonetic" data-role="ipa" ${item.phonetic ? '' : 'style="display:none;"'}>${
+            item.phonetic ? escapeHtml(item.phonetic) : ''
+          }</span>
         </div>
         <div style="display: flex; align-items: center; gap: 5px;">
           <button type="button" class="px-icon-btn" data-action="speak" title="Pronounce">
@@ -764,6 +774,21 @@ export class ContentHighlighterController {
         ${escapeHtml(item.translatedText)}
       </div>
     `;
+
+    if (!item.phonetic) {
+      requestIpa(item.sourceText).then((ipa) => {
+        if (!ipa) return;
+        item.phonetic = ipa;
+        if (this.hoverTooltipEl === tooltip) {
+          const ipaEl = tooltip.querySelector<HTMLElement>('[data-role="ipa"]');
+          if (ipaEl) {
+            ipaEl.textContent = ipa;
+            ipaEl.style.display = '';
+          }
+        }
+        updateVocabItemPhonetic(item.pageUrl, item.sourceText, ipa).catch(() => {});
+      });
+    }
 
     tooltip.addEventListener('mouseenter', () => {
       this.isPointerInsideTooltip = true;
@@ -940,21 +965,21 @@ export class ContentHighlighterController {
           this.applyPageHighlights();
         }
       });
-    }
-
-    window.addEventListener('project_x_storage_sync', async () => {
-      this.settings = await getSettings();
-      this.syncThemeOnShadow();
-      this.applyPageHighlights();
-    });
-
-    if (typeof BroadcastChannel !== 'undefined') {
-      const bc = new BroadcastChannel('project_x_storage_sync');
-      bc.onmessage = async () => {
+    } else {
+      window.addEventListener('project_x_storage_sync', async () => {
         this.settings = await getSettings();
         this.syncThemeOnShadow();
         this.applyPageHighlights();
-      };
+      });
+
+      if (typeof BroadcastChannel !== 'undefined') {
+        const bc = new BroadcastChannel('project_x_storage_sync');
+        bc.onmessage = async () => {
+          this.settings = await getSettings();
+          this.syncThemeOnShadow();
+          this.applyPageHighlights();
+        };
+      }
     }
 
     if (api?.runtime?.onMessage) {
@@ -974,7 +999,7 @@ export class ContentHighlighterController {
             selectionText,
             highlightedCount: this.activeRanges.length,
           });
-          return true;
+          return false;
         }
 
         if (message?.type === 'HIGHLIGHT_PAGE_HEADERS') {
@@ -988,22 +1013,26 @@ export class ContentHighlighterController {
             el.style.paddingLeft = '8px';
           });
           sendResponse({ ok: true, count: headings.length });
-          return true;
+          return false;
         }
 
         if (message?.type === 'SCROLL_TO_VOCAB' && message.sourceText) {
           const scrolled = this.scrollToWord(String(message.sourceText));
           sendResponse({ ok: scrolled });
-          return true;
+          return false;
         }
 
         if (message?.type === 'REFRESH_HIGHLIGHTS') {
-          getSettings().then((s) => {
-            this.settings = s;
-            this.syncThemeOnShadow();
-            this.applyPageHighlights();
-          });
-          sendResponse({ ok: true });
+          getSettings()
+            .then((s) => {
+              this.settings = s;
+              this.syncThemeOnShadow();
+              this.applyPageHighlights();
+              sendResponse({ ok: true });
+            })
+            .catch(() => {
+              sendResponse({ ok: false });
+            });
           return true;
         }
 

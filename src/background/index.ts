@@ -4,7 +4,7 @@ import {
   saveVocabItem,
   STORAGE_KEY,
 } from '../shared/storage';
-import { translateText } from './translator';
+import { translateText, lookupIpa } from './translator';
 
 const CONTEXT_MENU_ID = 'project-x-translate-selection';
 
@@ -23,26 +23,49 @@ async function syncSidePanelBehavior() {
   }
 }
 
-async function setupContextMenu() {
-  const api = getExtensionApi();
-  if (!api?.contextMenus) return;
+let contextMenuSetupChain: Promise<void> = Promise.resolve();
 
-  const settings = await getSettings();
-  api.contextMenus.removeAll(() => {
-    if (settings.enableContextMenu) {
-      api.contextMenus.create({
-        id: CONTEXT_MENU_ID,
-        title: 'Translate & Highlight with Project X',
-        contexts: ['selection'],
+function setupContextMenu(): Promise<void> {
+  contextMenuSetupChain = contextMenuSetupChain.then(async () => {
+    const api = getExtensionApi();
+    if (!api?.contextMenus) return;
+
+    const settings = await getSettings();
+    await new Promise<void>((resolve) => {
+      api.contextMenus.removeAll(() => {
+        void api.runtime?.lastError;
+        if (!settings.enableContextMenu) {
+          resolve();
+          return;
+        }
+        api.contextMenus.create(
+          {
+            id: CONTEXT_MENU_ID,
+            title: 'Translate & Highlight with Project X',
+            contexts: ['selection'],
+          },
+          () => {
+            void api.runtime?.lastError;
+            resolve();
+          }
+        );
       });
-    }
+    });
   });
+  return contextMenuSetupChain;
 }
 
 const api = getExtensionApi();
 
 if (api?.runtime?.onInstalled) {
   api.runtime.onInstalled.addListener(async () => {
+    await syncSidePanelBehavior();
+    await setupContextMenu();
+  });
+}
+
+if (api?.runtime?.onStartup) {
+  api.runtime.onStartup.addListener(async () => {
     await syncSidePanelBehavior();
     await setupContextMenu();
   });
@@ -81,6 +104,7 @@ if (api?.runtime?.onMessage) {
             const saved = await saveVocabItem({
               sourceText: result.sourceText,
               translatedText: result.translatedText,
+              phonetic: result.phonetic,
               targetLang: result.targetLang,
               pageUrl,
               pageTitle,
@@ -101,6 +125,19 @@ if (api?.runtime?.onMessage) {
         }
       })();
       return true; // Keep message channel open for async response
+    }
+
+    if (message?.type === 'FETCH_IPA') {
+      (async () => {
+        try {
+          const text = String(message.text || '').trim();
+          const phonetic = text ? await lookupIpa(text) : undefined;
+          sendResponse({ ok: true, phonetic });
+        } catch {
+          sendResponse({ ok: false });
+        }
+      })();
+      return true;
     }
 
     if (message?.type === 'OPEN_SIDE_PANEL') {
@@ -132,6 +169,7 @@ if (api?.contextMenus?.onClicked) {
       await saveVocabItem({
         sourceText: result.sourceText,
         translatedText: result.translatedText,
+        phonetic: result.phonetic,
         targetLang: result.targetLang,
         pageUrl: tab?.url || 'https://web.article',
         pageTitle: tab?.title || 'Web Article',

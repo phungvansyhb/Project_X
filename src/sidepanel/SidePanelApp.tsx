@@ -17,8 +17,6 @@ import {
   Layers,
 } from 'lucide-react';
 import {
-  useExtensionSettings,
-  useThemeSync,
   getVocabForPage,
   getAllVocabItems,
   removeVocabItem,
@@ -27,6 +25,7 @@ import {
   SUPPORTED_LANGUAGES,
   VocabItem,
 } from '../shared/storage';
+import { useExtensionSettings, useThemeSync } from '../shared/storageHooks';
 import {
   getActiveTabInfo,
   openOptionsPage,
@@ -370,7 +369,7 @@ export const SidePanelApp: React.FC<{
 
         <button
           type="button"
-          className="btn btn-emerald"
+          className="btn btn-primary"
           onClick={handleExportExcel}
           title="Export words to Excel (.xlsx) with Source Text & Translated Meaning"
           style={{ padding: '8px 13px', fontSize: 12, flexShrink: 0 }}
@@ -440,6 +439,21 @@ export const SidePanelApp: React.FC<{
                   >
                     {item.sourceText}
                   </span>
+                  {item.phonetic && (
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: 'var(--clay-text-muted)',
+                        fontFamily: "'Lucida Sans Unicode', 'DejaVu Sans', sans-serif",
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      {item.phonetic}
+                    </span>
+                  )}
                   <span className="clay-badge" style={{ fontSize: 10, padding: '2px 7px' }}>
                     {item.targetLang.toUpperCase()}
                   </span>

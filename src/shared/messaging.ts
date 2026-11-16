@@ -5,7 +5,7 @@ import {
   VocabItem,
   normalizePageUrl,
 } from './storage';
-import { translateText, TranslationResult } from '../background/translator';
+import { translateText, lookupIpa, TranslationResult } from '../background/translator';
 
 export type ExtensionMessage =
   | {
@@ -15,6 +15,7 @@ export type ExtensionMessage =
       pageTitle?: string;
       autoSave?: boolean;
     }
+  | { type: 'FETCH_IPA'; text: string }
   | { type: 'GET_ACTIVE_TAB_INFO' }
   | { type: 'HIGHLIGHT_ACTIVE_PAGE'; color?: string }
   | { type: 'SCROLL_TO_VOCAB'; sourceText: string }
@@ -84,6 +85,7 @@ export async function requestTranslation(params: {
       const saved = await saveVocabItem({
         sourceText: result.sourceText,
         translatedText: result.translatedText,
+        phonetic: result.phonetic,
         targetLang: result.targetLang,
         pageUrl: params.pageUrl || window.location.href,
         pageTitle: params.pageTitle || document.title,
@@ -98,6 +100,31 @@ export async function requestTranslation(params: {
       error: err instanceof Error ? err.message : 'Translation failed',
     };
   }
+}
+
+/**
+ * Request IPA phonetic transcription via Background Service Worker (or direct lookup in Dev Workbench)
+ */
+export async function requestIpa(text: string): Promise<string | undefined> {
+  const cleanText = text.trim();
+  if (!cleanText) return undefined;
+
+  const api = getExtensionApi();
+  if (api?.runtime?.sendMessage) {
+    try {
+      const response = (await api.runtime.sendMessage({
+        type: 'FETCH_IPA',
+        text: cleanText,
+      })) as { ok?: boolean; phonetic?: string } | undefined;
+      if (response?.ok) {
+        return response.phonetic;
+      }
+    } catch {
+      // Fallback to direct lookup when running in Vite Dev Workbench
+    }
+  }
+
+  return lookupIpa(cleanText);
 }
 
 export async function getActiveTabInfo(): Promise<ActiveTabInfo> {

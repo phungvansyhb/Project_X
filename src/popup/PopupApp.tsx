@@ -10,12 +10,11 @@ import {
   Trash2,
 } from 'lucide-react';
 import {
-  useExtensionSettings,
-  useThemeSync,
   getVocabForPage,
   getAllVocabItems,
   removeVocabItem,
 } from '../shared/storage';
+import { useExtensionSettings, useThemeSync } from '../shared/storageHooks';
 import {
   getActiveTabInfo,
   openOptionsPage,
@@ -138,7 +137,21 @@ export const PopupApp: React.FC = () => {
                   gap: 6,
                 }}
               >
-                <span style={{ fontSize: 13, fontWeight: 800 }}>{item.sourceText}</span>
+                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                  <span style={{ fontSize: 13, fontWeight: 800 }}>{item.sourceText}</span>
+                  {item.phonetic && (
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: 'var(--clay-text-muted)',
+                        fontFamily: "'Lucida Sans Unicode', 'DejaVu Sans', sans-serif",
+                      }}
+                    >
+                      {item.phonetic}
+                    </span>
+                  )}
+                </div>
                 <div style={{ display: 'flex', gap: 4 }}>
                   <button
                     type="button"
@@ -196,7 +209,7 @@ export const PopupApp: React.FC = () => {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
         <button
           type="button"
-          className="btn btn-emerald"
+          className="btn btn-primary"
           onClick={() =>
             exportVocabToExcel(
               currentPageWords.length > 0 ? currentPageWords : allWords,
