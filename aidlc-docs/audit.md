@@ -148,3 +148,43 @@
 - **Artifacts & Files Updated**:
   - [`aidlc-docs/audit.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/audit.md) — Appended Prompt 10 audit log entry prior to committing.
 - **Verification & Gate Status**: Committed and pushed to `origin/main`; next unit in queue remains **`UNIT-03` (Content Script — Shadow DOM Claymorphism Selection Popup, `CSS.highlights` Engine & Hover Tooltip)**.
+
+---
+
+## [2026-11-15T19:51:35-08:00] — Prompt 11: Implement `UNIT-03` (Content Script — Shadow DOM Claymorphism Popup, `CSS.highlights` Engine & Hover Tooltip)
+- **Phase / Stage**: `CONSTRUCTION / UNIT-03: Content Script (CSS.highlights & Shadow DOM UI)`
+- **User Input**: `"implement Unit-03"`
+- **Clarifications / Decisions**: Executed `UNIT-03` implementation and build verification.
+- **Artifacts & Files Updated**:
+  - [`src/content/index.ts`](file:///home/antigravity/phungvansyhb/Project_X/src/content/index.ts) — Implemented [`ContentHighlighterController`](file:///home/antigravity/phungvansyhb/Project_X/src/content/index.ts#L317-L796) and [`initContentHighlighter`](file:///home/antigravity/phungvansyhb/Project_X/src/content/index.ts#L800-L810):
+    - Shadow DOM host (`#project-x-shadow-host`) with Soft Pastel Claymorphism + Dark Clay CSS variables and pop-in animations.
+    - `CSS.highlights` (`::highlight(project-x-vocab)`) text-node scanner (`TreeWalker`) that highlights all occurrences of saved words for the current page URL and re-applies highlights automatically on page load and storage updates.
+    - Selection listener (`mouseup`) supporting `auto`, `icon`, and `manual` modes, showing the Claymorphism translation popup with pronunciation (`speechSynthesis`) and auto-saving by URL.
+    - `requestAnimationFrame`-throttled `mousemove` range hit-tester (`Range.getClientRects()`) that renders the Claymorphism hover meaning tooltip when hovering over any highlighted word on the page.
+    - Smooth scroll-to-word support (`SCROLL_TO_VOCAB`).
+  - [`aidlc-docs/aidlc-state.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/aidlc-state.md) & [`aidlc-docs/construction/plans/construction-plan.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/construction/plans/construction-plan.md) — Marked `UNIT-03` as completed `[x]`.
+  - [`aidlc-docs/audit.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/audit.md) — Appended Prompt 11 audit entry.
+- **Verification & Gate Status**: `npm run typecheck && npm run build` passed with 0 errors. Next unit in queue: **`UNIT-04` (Claymorphism Side Panel, Popup, Options Page & Cross-Browser Manifest Upgrade)**.
+
+---
+
+## [2026-11-15T19:55:25-08:00] — Prompt 12: Local Testing Guide & Self-Contained `content.js` Bundle Fix
+- **Phase / Stage**: `CONSTRUCTION / Local Verification & Bundler Hardening`
+- **User Input**: `"làm sao để test trên local?"`
+- **Clarifications / Decisions**:
+  - Provided step-by-step instructions for testing locally via two modes: (1) loading unpacked `dist/` in Chrome/Edge/Brave/Firefox and (2) running the interactive Vite Dev Workbench (`npm run dev`).
+  - Enhanced `vite.config.ts` with `bundleExtensionScriptsPlugin()` so `dist/content.js` is bundled as a self-contained IIFE script (preventing `Cannot use import statement outside a module` in browser content scripts).
+- **Artifacts & Files Updated**:
+  - [`vite.config.ts`](file:///home/antigravity/phungvansyhb/Project_X/vite.config.ts) — Added `bundleExtensionScriptsPlugin()` to output self-contained `dist/content.js` (IIFE) and `dist/background.js` (ESM).
+  - [`aidlc-docs/audit.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/audit.md) — Appended Prompt 12 audit entry.
+- **Verification & Gate Status**: Verified `npm run build` produces self-contained `dist/content.js` and `dist/background.js`. Ready for **`UNIT-04`**.
+
+---
+
+## [2026-11-15T19:58:12-08:00] — Prompt 13: Commit & Push `UNIT-03` and Bundler Updates to Git
+- **Phase / Stage**: `CONSTRUCTION / Version Control Checkpoint after UNIT-03`
+- **User Input**: `"Commit and push"`
+- **Clarifications / Decisions**: Stage, commit, and push completed `UNIT-03` (`src/content/index.ts` Shadow DOM Claymorphism popup, `CSS.highlights` engine, and `mousemove` hover tooltip) plus `vite.config.ts` IIFE content script bundler and AI-DLC tracking updates to `origin/main`.
+- **Artifacts & Files Updated**:
+  - [`aidlc-docs/audit.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/audit.md) — Appended Prompt 13 audit entry prior to committing.
+- **Verification & Gate Status**: Committed and pushed to `origin/main`; next unit in queue: **`UNIT-04` (Claymorphism Side Panel, Popup, Options Page & Cross-Browser Manifest Upgrade)**.

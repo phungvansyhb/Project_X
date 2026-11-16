@@ -21,7 +21,7 @@
   - `translateText(text: string, targetLang: string, settings: ExtensionSettings): Promise<{ translatedText: string; detectedSourceLang?: string; provider: string }>`
   - Handles `TRANSLATE_TEXT`, `GET_ACTIVE_TAB_INFO`, and `SCROLL_TO_VOCAB` messages.
 
-### [ ] `UNIT-03`: Content Script (`CSS.highlights` & Shadow DOM UI)
+### [x] `UNIT-03`: Content Script (`CSS.highlights` & Shadow DOM UI)
 - **Files**: `src/content/index.ts`
 - **Key Responsibilities**:
   - Listen for `mouseup` text selection → call `TRANSLATE_TEXT` → show Shadow DOM translation popup → auto-save word for `normalizePageUrl(location.href)` → apply `CSS.highlights`.
