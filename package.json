@@ -1,8 +1,8 @@
 {
-  "name": "browser-extension-template",
+  "name": "lingoglow-extension",
   "private": true,
-  "version": "0.1.0",
-  "description": "Modern Manifest V3 Browser Extension Template with Vite, React, TypeScript, Side Panel, and Options Page (Chrome, Edge, Brave, Safari)",
+  "version": "0.2.0",
+  "description": "LingoGlow — Instant Web Translator, IPA Hover Tooltip & Smart Vocabulary Highlighter Browser Extension (Chrome, Edge, Brave, Firefox, Safari)",
   "type": "module",
   "scripts": {
     "dev": "vite",

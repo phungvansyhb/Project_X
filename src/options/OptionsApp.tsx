@@ -8,10 +8,10 @@ import {
   Download,
   CheckCircle2,
   PanelRight,
-  Layers,
   Languages,
   FileSpreadsheet,
 } from 'lucide-react';
+import { LingoGlowLogo } from '../shared/LingoGlowLogo';
 import {
   getAllVocabItems,
   SUPPORTED_LANGUAGES,
@@ -48,14 +48,14 @@ export const OptionsApp: React.FC<{ embedded?: boolean }> = ({ embedded = false 
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'project-x-settings.json';
+    a.download = 'lingoglow-settings.json';
     a.click();
     URL.revokeObjectURL(url);
     notify('Exported settings JSON');
   };
 
   const handleExportExcel = () => {
-    exportVocabToExcel(allWords, 'project-x-all-vocabulary.xlsx');
+    exportVocabToExcel(allWords, 'lingoglow-all-vocabulary.xlsx');
     notify(`Exported ${allWords.length} word(s) to Excel (.xlsx)`);
   };
 
@@ -89,27 +89,13 @@ export const OptionsApp: React.FC<{ embedded?: boolean }> = ({ embedded = false 
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div
-            style={{
-              width: 42,
-              height: 42,
-              borderRadius: 14,
-              background: 'var(--clay-accent-gradient)',
-              boxShadow: 'var(--clay-accent-shadow)',
-              color: '#fff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Layers size={22} />
-          </div>
+          <LingoGlowLogo size={42} />
           <div>
             <h1 style={{ fontSize: 18, fontWeight: 800 }}>
-              Project X — Extension Options
+              LingoGlow — Settings &amp; Export
             </h1>
             <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--clay-text-muted)' }}>
-              Claymorphism Web Translator, CSS <code>::highlight()</code> Engine & Excel Exporter
+              Instant Web Translator, IPA Hover Tooltip &amp; Smart Excel Study Deck
             </p>
           </div>
         </div>
@@ -359,7 +345,7 @@ export const OptionsApp: React.FC<{ embedded?: boolean }> = ({ embedded = false 
               {/* CSS ::highlight() Color Swatch */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div style={{ fontSize: 13, fontWeight: 800 }}>
-                  Webpage <code>::highlight(project-x-vocab)</code> Color
+                  Webpage Glow Highlight Color
                 </div>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   {(
@@ -455,7 +441,7 @@ export const OptionsApp: React.FC<{ embedded?: boolean }> = ({ embedded = false 
                     Right-Click Context Menu Translation
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--clay-text-muted)' }}>
-                    Adds &ldquo;Translate & Highlight with Project X&rdquo; to the browser right-click menu.
+                    Adds &ldquo;Translate &amp; Glow with LingoGlow&rdquo; to the browser right-click menu.
                   </div>
                 </div>
                 <label className="switch">

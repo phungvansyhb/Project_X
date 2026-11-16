@@ -567,7 +567,7 @@ export class ContentHighlighterController {
       const launcher = document.createElement('button');
       launcher.type = 'button';
       launcher.className = 'px-clay-icon-launcher';
-      launcher.title = 'Translate & Highlight with Project X';
+      launcher.title = 'Translate & Glow with LingoGlow';
       const pos = this.clampViewportPosition(
         anchorRect.right + 6,
         anchorRect.bottom + 6,

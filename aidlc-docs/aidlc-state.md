@@ -1,11 +1,11 @@
 # AI-DLC Workflow State Tracker (`aidlc-state.md`)
 
 ## Project Metadata
-- **Project Name**: Project X — Web Selection Translator & Vocabulary Highlighter
-- **Project Type**: Brownfield (Base MV3 Vite + React 19 + TypeScript scaffold completed; evolved into Vocabulary Translator & Highlighter with **Claymorphism UI**)
-- **Active Phase**: `OPERATIONS` (Construction Phase `UNIT-01` → `UNIT-04` and Build & Test Verification Completed)
-- **Active Stage**: Completed `Stage 3.1` & `Stage 3.2` + Extension Runtime/Manifest Debug Fix — Ready for Release / User Testing
-- **Last Updated**: `2026-11-16T13:45:00+07:00`
+- **Project Name**: LingoGlow (formerly Project X) — Instant Web Translator & Smart Vocab Highlighter
+- **Project Type**: Brownfield (MV3 Vite + React 19 + TypeScript Vocabulary Translator & Highlighter with **Claymorphism UI**)
+- **Active Phase**: `OPERATIONS` (`UNIT-01` → `UNIT-05` and Build & Asset Verification Completed)
+- **Active Stage**: Completed `UNIT-05` (**LingoGlow** Brand Identity, Claymorphism Icons/Promo Covers, Store Listing & README Showcase) — Ready for Release / Packaging
+- **Last Updated**: `2026-11-15T23:18:00-08:00`
 
 ---
 
@@ -25,6 +25,7 @@
 - [x] **`UNIT-02`: Background Translation Service & Message Router** (`src/background/translator.ts`, `src/background/index.ts`, `src/shared/messaging.ts`)
 - [x] **`UNIT-03`: Content Script — Shadow DOM Claymorphism Selection Popup, `CSS.highlights` Engine & Hover Tooltip** (`src/content/index.ts`)
 - [x] **`UNIT-04`: Claymorphism Side Panel, Popup, Options Page & Cross-Browser Manifest Upgrade** (`src/sidepanel/SidePanelApp.tsx`, `src/popup/PopupApp.tsx`, `src/options/OptionsApp.tsx`, `src/dev/main.tsx`, `public/manifest.json`)
+- [x] **`UNIT-05`: Brand Identity Overhaul (`LingoGlow`), Claymorphism Logo/Cover Assets & Conversion-Focused Extension Introduction** (`public/manifest.json`, `public/icons/*`, `docs/assets/*`, `README.md`, `aidlc-docs/operations/store-listing.md`, HTML titles, UI headers & onboarding copy)
 - [x] **Stage 2.5: Full Build & Verification** (`npm run typecheck && npm run build`)
 
 ---

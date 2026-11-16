@@ -231,7 +231,7 @@ export function buildExcelBlob(items: VocabItem[]): Blob {
 
 export function exportVocabToExcel(
   items: VocabItem[],
-  filename = `project-x-vocabulary-${new Date().toISOString().slice(0, 10)}.xlsx`
+  filename = `lingoglow-vocabulary-${new Date().toISOString().slice(0, 10)}.xlsx`
 ): void {
   const blob = buildExcelBlob(items);
   const url = URL.createObjectURL(blob);

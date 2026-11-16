@@ -326,3 +326,67 @@
 - **Artifacts & Files Updated**:
   - [`aidlc-docs/audit.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/audit.md) — Appended Prompt 22 audit entry prior to committing.
 - **Verification & Gate Status**: Verified `git status` excludes `.patch` files; committed and pushed to `origin/main`.
+
+---
+
+## [2026-11-15T23:02:55-08:00] — Prompt 23: Plan Extension Rebranding (`LingoGlow`) & Conversion-Focused Introduction
+- **Phase / Stage**: `CONSTRUCTION / Planning UNIT-05 (Brand Identity & Introduction Overhaul)`
+- **User Input**: `"/plan update extension introduction, name to impress user in order to have download"`
+- **Clarifications / Decisions**:
+  - **Brand Name**: `LingoGlow — "Instant Web Translator & Smart Vocab Highlighter"` (`short_name`: `LingoGlow`)
+  - **Messaging Tone**: `Benefit-led & conversion-focused` (effortless reading, instant IPA + meaning on hover, and 1-click Excel study deck export)
+  - **Target Scope**:
+    1. Manifest, HTML titles & Chrome/Edge/Firefox Web Store listing copy (`public/manifest.json`, `package.json`, HTML entry titles, `aidlc-docs/operations/store-listing.md`)
+    2. `README.md` rewrite (hero banner, feature showcase, browser install CTA, privacy & FAQ)
+    3. In-extension UI branding & welcoming microcopy (Side Panel, Popup, Options, Context Menu, Excel filename) while preserving `STORAGE_KEY = 'project_x_settings'` for backward compatibility
+- **Artifacts & Files Updated**:
+  - [`aidlc-docs/construction/plans/construction-plan.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/construction/plans/construction-plan.md) — Added `UNIT-05` plan and file checklist.
+  - [`aidlc-docs/aidlc-state.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/aidlc-state.md) — Registered `UNIT-05` as planned and awaiting user sign-off.
+  - [`aidlc-docs/audit.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/audit.md) — Appended Prompt 23 audit entry.
+- **Verification & Gate Status**: Plan documented; awaiting user approval to execute `UNIT-05` implementation and build verification.
+
+---
+
+## [2026-11-15T23:06:15-08:00] — Prompt 24: Clarify & Plan Logo and Store Cover Images for `UNIT-05`
+- **Phase / Stage**: `CONSTRUCTION / Planning UNIT-05 (Visual Brand Assets & Store Cover Expansion)`
+- **User Input**: `"How about logo and cover image ?"`
+- **Clarifications / Decisions**:
+  - **Logo Concept**: `Glowing Highlighter + Speech Sparkle` (3D Claymorphism indigo-violet squircle with glowing golden-yellow text marker & translate sparkle, replacing the generic `"X"` icon).
+  - **Asset Deliverables**:
+    1. Extension icons (`16×16`, `32×32`, `48×48`, `128×128` PNGs in `public/icons/`) + matching inline `LingoGlowLogo` SVG mark in `PopupApp.tsx`, `SidePanelApp.tsx`, and `OptionsApp.tsx`.
+    2. README & GitHub Hero Cover Banner + Chrome Web Store / Edge Promo Tiles in `docs/assets/` (`1400×560` marquee cover + `440×280` small promo tile).
+- **Artifacts & Files Updated**:
+  - [`aidlc-docs/construction/plans/construction-plan.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/construction/plans/construction-plan.md) — Expanded `UNIT-05` with step 4 (Visual Brand Assets & Store Cover Graphics).
+  - [`aidlc-docs/aidlc-state.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/aidlc-state.md) — Updated `UNIT-05` summary.
+  - [`aidlc-docs/audit.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/audit.md) — Appended Prompt 24 audit entry.
+- **Verification & Gate Status**: Expanded `UNIT-05` plan ready; awaiting user approval to execute generation, code updates, and build verification.
+
+---
+
+## [2026-11-15T23:18:00-08:00] — Prompt 25: Implement `UNIT-05` (`LingoGlow` Rebrand, Claymorphism Logo & Cover Assets, README & Store Listing)
+- **Phase / Stage**: `CONSTRUCTION / UNIT-05: Brand Identity Overhaul & Conversion-Focused Introduction`
+- **User Input**: `"proceed Unit-05"`
+- **Clarifications / Decisions**:
+  - Executed `UNIT-05` end-to-end: rebranded extension to **LingoGlow**, generated 3D Claymorphism icons and store promo/cover banners, rewrote `README.md` and `aidlc-docs/operations/store-listing.md`, and updated all HTML titles and UI surfaces while preserving `STORAGE_KEY = 'project_x_settings'` for backward compatibility.
+- **Artifacts & Files Updated**:
+  - **Icons & Store Visuals**:
+    - Replaced [`public/icons/icon-16.png`](file:///home/antigravity/phungvansyhb/Project_X/public/icons/icon-16.png), [`icon-32.png`](file:///home/antigravity/phungvansyhb/Project_X/public/icons/icon-32.png), [`icon-48.png`](file:///home/antigravity/phungvansyhb/Project_X/public/icons/icon-48.png), [`icon-128.png`](file:///home/antigravity/phungvansyhb/Project_X/public/icons/icon-128.png) with transparent-corner 3D Claymorphism **LingoGlow** icons.
+    - Created [`docs/assets/lingoglow-cover-marquee.png`](file:///home/antigravity/phungvansyhb/Project_X/docs/assets/lingoglow-cover-marquee.png) (`1400×560`) and [`docs/assets/lingoglow-promo-small.png`](file:///home/antigravity/phungvansyhb/Project_X/docs/assets/lingoglow-promo-small.png) (`440×280`).
+  - **Manifest, Package & Entry Titles**:
+    - Updated [`public/manifest.json`](file:///home/antigravity/phungvansyhb/Project_X/public/manifest.json), [`package.json`](file:///home/antigravity/phungvansyhb/Project_X/package.json), [`index.html`](file:///home/antigravity/phungvansyhb/Project_X/index.html), [`popup.html`](file:///home/antigravity/phungvansyhb/Project_X/popup.html), [`sidepanel.html`](file:///home/antigravity/phungvansyhb/Project_X/sidepanel.html), and [`options.html`](file:///home/antigravity/phungvansyhb/Project_X/options.html).
+  - **UI Branding, Copy & Documentation**:
+    - Created [`src/shared/LingoGlowLogo.tsx`](file:///home/antigravity/phungvansyhb/Project_X/src/shared/LingoGlowLogo.tsx).
+    - Updated [`src/popup/PopupApp.tsx`](file:///home/antigravity/phungvansyhb/Project_X/src/popup/PopupApp.tsx), [`src/sidepanel/SidePanelApp.tsx`](file:///home/antigravity/phungvansyhb/Project_X/src/sidepanel/SidePanelApp.tsx), [`src/options/OptionsApp.tsx`](file:///home/antigravity/phungvansyhb/Project_X/src/options/OptionsApp.tsx), [`src/background/index.ts`](file:///home/antigravity/phungvansyhb/Project_X/src/background/index.ts), [`src/content/index.ts`](file:///home/antigravity/phungvansyhb/Project_X/src/content/index.ts), [`src/shared/excelExport.ts`](file:///home/antigravity/phungvansyhb/Project_X/src/shared/excelExport.ts), [`src/shared/storage.ts`](file:///home/antigravity/phungvansyhb/Project_X/src/shared/storage.ts), and [`src/dev/main.tsx`](file:///home/antigravity/phungvansyhb/Project_X/src/dev/main.tsx).
+    - Rewrote [`README.md`](file:///home/antigravity/phungvansyhb/Project_X/README.md) and created [`aidlc-docs/operations/store-listing.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/operations/store-listing.md).
+    - Marked `UNIT-05` `[x]` in [`aidlc-docs/construction/plans/construction-plan.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/construction/plans/construction-plan.md) and [`aidlc-docs/aidlc-state.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/aidlc-state.md).
+- **Verification & Gate Status**: `npm run typecheck` and `npm run build` passed with exit code `0`. Verified `dist/manifest.json`, `dist/icons/*.png` (`16/32/48/128` RGBA), `docs/assets/*.png` (`1400×560`, `440×280`), and all `dist/*.html` titles.
+
+---
+
+## [2026-11-15T23:19:45-08:00] — Prompt 26: Commit & Push `UNIT-05` (`LingoGlow` Rebrand, Logo/Cover Assets & Store Introduction)
+- **Phase / Stage**: `OPERATIONS / Version Control Release Checkpoint after UNIT-05`
+- **User Input**: `"Commit and push "`
+- **Clarifications / Decisions**: Stage, commit, and push completed `UNIT-05` (`LingoGlow` branding, 3D Claymorphism extension icons, README & store cover/promo graphics, `README.md`, `aidlc-docs/operations/store-listing.md`, manifest/HTML/UI updates, and AI-DLC tracking docs) to `origin/main`.
+- **Artifacts & Files Updated**:
+  - [`aidlc-docs/audit.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/audit.md) — Appended Prompt 26 audit entry prior to committing.
+- **Verification & Gate Status**: Staging, committing, and pushing to `origin/main`.

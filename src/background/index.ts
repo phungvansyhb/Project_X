@@ -18,7 +18,7 @@ async function syncSidePanelBehavior() {
         openPanelOnActionClick: settings.openPanelOnActionClick,
       });
     } catch (err) {
-      console.warn('[Project X] Unable to set sidePanel behavior:', err);
+      console.warn('[LingoGlow] Unable to set sidePanel behavior:', err);
     }
   }
 }
@@ -41,7 +41,7 @@ function setupContextMenu(): Promise<void> {
         api.contextMenus.create(
           {
             id: CONTEXT_MENU_ID,
-            title: 'Translate & Highlight with Project X',
+            title: 'Translate & Glow with LingoGlow',
             contexts: ['selection'],
           },
           () => {

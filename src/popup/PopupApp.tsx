@@ -2,13 +2,13 @@ import React, { useEffect, useState, useMemo } from 'react';
 import {
   PanelRight,
   Settings,
-  Layers,
   Sparkles,
   FileSpreadsheet,
   Volume2,
   Crosshair,
   Trash2,
 } from 'lucide-react';
+import { LingoGlowLogo } from '../shared/LingoGlowLogo';
 import {
   getVocabForPage,
   getAllVocabItems,
@@ -64,25 +64,11 @@ export const PopupApp: React.FC = () => {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: 11,
-              background: 'var(--clay-accent-gradient)',
-              boxShadow: 'var(--clay-accent-shadow)',
-              color: '#fff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Layers size={17} />
-          </div>
+          <LingoGlowLogo size={34} />
           <div>
-            <div style={{ fontSize: 14, fontWeight: 800 }}>Project X Vocab</div>
+            <div style={{ fontSize: 14, fontWeight: 800 }}>LingoGlow</div>
             <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--clay-text-muted)' }}>
-              {currentPageWords.length} word(s) on this page
+              {currentPageWords.length} saved on this page
             </div>
           </div>
         </div>
@@ -112,10 +98,10 @@ export const PopupApp: React.FC = () => {
               fontSize: 12,
               fontWeight: 600,
               color: 'var(--clay-text-muted)',
+              lineHeight: 1.5,
             }}
           >
-            Select any text on this webpage to translate, highlight with{' '}
-            <code>::highlight()</code>, and auto-save!
+            Select any word on this page to translate, glow-highlight, and hear IPA pronunciation on hover!
           </div>
         ) : (
           currentPageWords.map((item) => (
@@ -213,7 +199,7 @@ export const PopupApp: React.FC = () => {
           onClick={() =>
             exportVocabToExcel(
               currentPageWords.length > 0 ? currentPageWords : allWords,
-              'project-x-vocabulary.xlsx'
+              'lingoglow-vocabulary.xlsx'
             )
           }
           disabled={currentPageWords.length === 0 && allWords.length === 0}

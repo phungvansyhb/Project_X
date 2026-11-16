@@ -34,14 +34,15 @@ const InteractiveArticleSimulator: React.FC = () => {
         }}
       >
         <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>
-          ✨ Interactive Reading & Highlight Simulator
+          ✨ LingoGlow — Interactive Reading & Highlight Simulator
         </div>
         <div style={{ fontSize: 12, opacity: 0.95 }}>
           1. <strong>Select any word or phrase</strong> in the article below to trigger the{' '}
-          <strong>Shadow DOM Claymorphism Popup Translator</strong>.<br />
-          2. Notice how all occurrences are automatically highlighted with{' '}
-          <code>::highlight(project-x-vocab)</code> and saved to the Side Panel on the right.<br />
-          3. <strong>Hover your mouse</strong> over any highlighted word to see its meaning tooltip!
+          <strong>LingoGlow Instant Translator</strong>.<br />
+          2. Notice how every occurrence glows automatically on the page and saves to your{' '}
+          <strong>Side Panel</strong> word bank.<br />
+          3. <strong>Hover your mouse</strong> over any highlighted word to view its meaning,{' '}
+          <strong>IPA phonetics</strong>, and listen to pronunciation!
         </div>
       </div>
 
@@ -59,27 +60,26 @@ const InteractiveArticleSimulator: React.FC = () => {
         }}
       >
         <h1 style={{ fontSize: 22, fontWeight: 800 }}>
-          Modern Browser Extension Architecture with Manifest V3 & Claymorphism
+          Read Any Webpage Effortlessly with LingoGlow
         </h1>
         <p>
-          Building a cross-browser <strong>extension</strong> with <strong>Manifest V3</strong>{' '}
-          allows developers to ship a single codebase across Chrome, Edge, Brave, Firefox, and
-          Safari. By combining a persistent <strong>Side Panel</strong> with an isolated{' '}
-          <strong>Shadow DOM</strong> overlay, users can read any article on the web and build
-          their personal <strong>vocabulary</strong> effortlessly.
+          Learning a new language while browsing shouldn&apos;t mean switching tabs to a dictionary.
+          With <strong>LingoGlow</strong>, selecting any word opens a tactile{' '}
+          <strong>Claymorphism</strong> popup with instant translation, <strong>IPA</strong>{' '}
+          pronunciation, and native audio—then saves it to your personal{' '}
+          <strong>vocabulary</strong> bank by webpage URL.
         </p>
         <p>
           Traditional web highlighters mutate webpage DOM trees by injecting wrapper tags, which
-          frequently breaks modern reactive frameworks. Instead, Project X leverages the native{' '}
+          frequently breaks modern reactive frameworks. Instead, LingoGlow leverages the native{' '}
           <strong>Custom Highlight API</strong> (<code>CSS.highlights</code>) to style text ranges
-          directly through CSS without modifying a single DOM node.
+          smoothly without modifying a single DOM node.
         </p>
         <p>
           Every time you select a word to <strong>translate</strong> and <strong>highlight</strong>{' '}
-          on this page, the <strong>Service Worker</strong> and <strong>Content Script</strong>{' '}
-          synchronize your saved words into local machine <strong>storage</strong> indexed by page
-          URL. Visually, the interface embraces <strong>Claymorphism</strong>—pairing soft pastel
-          surfaces, rounded geometry, and three-dimensional inner highlights.
+          on this page, your saved list syncs locally in private machine <strong>storage</strong>.
+          Revisit the article anytime to see your words still glowing—or export your deck to{' '}
+          <strong>Excel (.xlsx)</strong> in one click.
         </p>
       </article>
     </div>

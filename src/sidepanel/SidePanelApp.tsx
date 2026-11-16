@@ -14,8 +14,8 @@ import {
   X,
   Plus,
   BookOpen,
-  Layers,
 } from 'lucide-react';
+import { LingoGlowLogo } from '../shared/LingoGlowLogo';
 import {
   getVocabForPage,
   getAllVocabItems,
@@ -139,7 +139,7 @@ export const SidePanelApp: React.FC<{
     const suffix = viewTab === 'current' ? 'current-page' : 'all-pages';
     exportVocabToExcel(
       targetList,
-      `project-x-vocab-${suffix}-${new Date().toISOString().slice(0, 10)}.xlsx`
+      `lingoglow-vocab-${suffix}-${new Date().toISOString().slice(0, 10)}.xlsx`
     );
     showToast(`Exported ${targetList.length} word(s) to Excel (.xlsx)`);
   };
@@ -176,28 +176,13 @@ export const SidePanelApp: React.FC<{
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 12,
-              background: 'var(--clay-accent-gradient)',
-              boxShadow: 'var(--clay-accent-shadow)',
-              color: '#fff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 800,
-            }}
-          >
-            <Layers size={18} />
-          </div>
+          <LingoGlowLogo size={36} />
           <div>
             <div style={{ fontSize: 15, fontWeight: 800, lineHeight: 1.2 }}>
-              Project X Vocab
+              LingoGlow
             </div>
             <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--clay-text-muted)' }}>
-              Select • Highlight • Hover • Export
+              Highlight • Hover IPA • Export .xlsx
             </div>
           </div>
         </div>

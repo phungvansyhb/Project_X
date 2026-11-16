@@ -108,9 +108,9 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   notes: [
     {
       id: 'welcome-note',
-      title: 'Welcome to Project X Side Panel',
+      title: 'Welcome to LingoGlow',
       content:
-        'Select any text on a webpage to translate, highlight with CSS ::highlight(), and auto-save by URL.',
+        'Select any word on the web to translate, glow-highlight, hear IPA pronunciation on hover, and export to Excel (.xlsx).',
       url: DEMO_PAGE_URL,
       createdAt: Date.now(),
     },
