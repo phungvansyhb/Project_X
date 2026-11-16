@@ -188,3 +188,29 @@
 - **Artifacts & Files Updated**:
   - [`aidlc-docs/audit.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/audit.md) — Appended Prompt 13 audit entry prior to committing.
 - **Verification & Gate Status**: Committed and pushed to `origin/main`; next unit in queue: **`UNIT-04` (Claymorphism Side Panel, Popup, Options Page & Cross-Browser Manifest Upgrade)**.
+
+---
+
+## [2026-11-15T20:05:30-08:00] — Prompt 14: Implement `UNIT-04` (Claymorphism Side Panel, Popup, Options Page, Dev Workbench & Cross-Browser Manifest)
+- **Phase / Stage**: `CONSTRUCTION / UNIT-04 & Stage 2.5 Full Build Verification`
+- **User Input**: `"proceed UNIT-04"`
+- **Clarifications / Decisions**: Executed `UNIT-04` implementation and full production build verification.
+- **Artifacts & Files Updated**:
+  - [`src/sidepanel/SidePanelApp.tsx`](file:///home/antigravity/phungvansyhb/Project_X/src/sidepanel/SidePanelApp.tsx) — Upgraded to **Claymorphism** vocabulary companion displaying **This Page** vs. **All Pages** highlighted words, quick translate input, search bar, inline meaning editor, audio pronunciation (`🔊`), scroll-to-word (`🎯`), and **Export Excel (`.xlsx`)** button.
+  - [`src/popup/PopupApp.tsx`](file:///home/antigravity/phungvansyhb/Project_X/src/popup/PopupApp.tsx) — Upgraded to **Claymorphism** toolbar popup listing current-page highlighted words with one-click **Export Excel (`.xlsx`)** and Side Panel / Options launchers.
+  - [`src/options/OptionsApp.tsx`](file:///home/antigravity/phungvansyhb/Project_X/src/options/OptionsApp.tsx) — Added full **Translator & Highlight** settings (Target Language, Free Google Translate / Gemini / OpenAI / DeepL API key, Selection Mode: `auto` / `icon` / `manual`, `::highlight()` color palette), **Claymorphism Theme** settings, and **Storage & Excel** export.
+  - [`src/dev/main.tsx`](file:///home/antigravity/phungvansyhb/Project_X/src/dev/main.tsx) — Added the **Interactive Reading & Highlight Simulator** connected to [`initContentHighlighter`](file:///home/antigravity/phungvansyhb/Project_X/src/content/index.ts#L800-L810) alongside the live Claymorphism Side Panel.
+  - [`public/manifest.json`](file:///home/antigravity/phungvansyhb/Project_X/public/manifest.json) — Added `host_permissions: ["<all_urls>"]`, `sidebar_action`, and `browser_specific_settings.gecko` for Chrome, Edge, Brave, Firefox, and Safari compatibility.
+  - [`aidlc-docs/aidlc-state.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/aidlc-state.md) & [`aidlc-docs/construction/plans/construction-plan.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/construction/plans/construction-plan.md) — Marked `UNIT-04` and `Stage 2.5` as completed `[x]`.
+  - [`aidlc-docs/audit.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/audit.md) — Appended Prompt 14 audit entry.
+- **Verification & Gate Status**: `npm run typecheck && npm run build` passed with 0 errors. All 4 Construction Units (`UNIT-01` → `UNIT-04`) are complete.
+
+---
+
+## [2026-11-15T20:07:24-08:00] — Prompt 15: Commit & Push `UNIT-04` and Completed Construction Phase to Git
+- **Phase / Stage**: `OPERATIONS / Version Control Release Checkpoint after UNIT-04`
+- **User Input**: `"let push"`
+- **Clarifications / Decisions**: Stage, commit, and push `UNIT-04` (`src/sidepanel/SidePanelApp.tsx`, `src/popup/PopupApp.tsx`, `src/options/OptionsApp.tsx`, `src/dev/main.tsx`, `public/manifest.json`) and updated AI-DLC state/plan/audit docs to `origin/main`.
+- **Artifacts & Files Updated**:
+  - [`aidlc-docs/audit.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/audit.md) — Appended Prompt 15 audit entry prior to committing.
+- **Verification & Gate Status**: Committed and pushed to `origin/main`. All Construction and Operations milestones complete.

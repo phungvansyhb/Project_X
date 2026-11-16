@@ -1,41 +1,75 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Settings,
   Sparkles,
-  Plus,
   Trash2,
   Globe,
-  Highlighter,
   RefreshCw,
+  Volume2,
+  Crosshair,
+  FileSpreadsheet,
+  Search,
+  Edit3,
   Check,
-  ExternalLink,
+  X,
+  Plus,
   BookOpen,
   Layers,
 } from 'lucide-react';
 import {
   useExtensionSettings,
   useThemeSync,
-  QuickNote,
+  getVocabForPage,
+  getAllVocabItems,
+  removeVocabItem,
+  updateVocabItemMeaning,
+  clearPageVocab,
+  SUPPORTED_LANGUAGES,
+  VocabItem,
 } from '../shared/storage';
 import {
   getActiveTabInfo,
-  triggerPageHighlight,
   openOptionsPage,
+  requestTranslation,
+  scrollToVocabOnPage,
   ActiveTabInfo,
 } from '../shared/messaging';
+import { exportVocabToExcel } from '../shared/excelExport';
 
-export const SidePanelApp: React.FC<{ embedded?: boolean; onOpenOptions?: () => void }> = ({
-  embedded = false,
-  onOpenOptions,
-}) => {
+function speakWord(text: string) {
+  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      utterance.rate = 0.95;
+      window.speechSynthesis.speak(utterance);
+    } catch {
+      // Ignore speech synthesis errors
+    }
+  }
+}
+
+export const SidePanelApp: React.FC<{
+  embedded?: boolean;
+  onOpenOptions?: () => void;
+}> = ({ embedded = false, onOpenOptions }) => {
   const { settings, saveSettings } = useExtensionSettings();
   useThemeSync(settings);
 
   const [activeTab, setActiveTab] = useState<ActiveTabInfo | null>(null);
-  const [noteTitle, setNoteTitle] = useState('');
-  const [noteContent, setNoteContent] = useState('');
-  const [highlighted, setHighlighted] = useState(false);
-  const [activeSection, setActiveSection] = useState<'workspace' | 'inspector'>('workspace');
+  const [viewTab, setViewTab] = useState<'current' | 'all'>('current');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [quickInput, setQuickInput] = useState('');
+  const [translatingQuick, setTranslatingQuick] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingMeaning, setEditingMeaning] = useState('');
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(null), 2200);
+  };
 
   const refreshTabInfo = async () => {
     const info = await getActiveTabInfo();
@@ -46,35 +80,69 @@ export const SidePanelApp: React.FC<{ embedded?: boolean; onOpenOptions?: () => 
     refreshTabInfo();
   }, []);
 
-  const handleAddNote = async (e: React.FormEvent) => {
+  const currentPageWords = useMemo(
+    () => getVocabForPage(settings, activeTab?.url),
+    [settings, activeTab?.url]
+  );
+
+  const allWords = useMemo(() => getAllVocabItems(settings), [settings]);
+
+  const displayedWords = useMemo(() => {
+    const base = viewTab === 'current' ? currentPageWords : allWords;
+    if (!searchQuery.trim()) return base;
+    const q = searchQuery.toLowerCase();
+    return base.filter(
+      (item) =>
+        item.sourceText.toLowerCase().includes(q) ||
+        item.translatedText.toLowerCase().includes(q) ||
+        item.pageTitle.toLowerCase().includes(q)
+    );
+  }, [viewTab, currentPageWords, allWords, searchQuery]);
+
+  const handleQuickTranslate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!noteTitle.trim() && !noteContent.trim()) return;
+    const text = quickInput.trim();
+    if (!text || translatingQuick) return;
 
-    const newNote: QuickNote = {
-      id: `note-${Date.now()}`,
-      title: noteTitle.trim() || 'Untitled Note',
-      content: noteContent.trim(),
-      url: activeTab?.url,
-      createdAt: Date.now(),
-    };
-
-    await saveSettings({
-      notes: [newNote, ...settings.notes],
+    setTranslatingQuick(true);
+    const res = await requestTranslation({
+      text,
+      pageUrl: activeTab?.url,
+      pageTitle: activeTab?.title,
+      autoSave: true,
     });
-    setNoteTitle('');
-    setNoteContent('');
+    setTranslatingQuick(false);
+
+    if (res.ok) {
+      setQuickInput('');
+      showToast(`Highlighted & saved "${text}"`);
+    }
   };
 
-  const handleDeleteNote = async (id: string) => {
-    await saveSettings({
-      notes: settings.notes.filter((n) => n.id !== id),
-    });
+  const handleDeleteWord = async (item: VocabItem) => {
+    await removeVocabItem(item.pageUrl, item.sourceText);
+    showToast(`Removed "${item.sourceText}"`);
   };
 
-  const handleHighlight = async () => {
-    await triggerPageHighlight(settings.accentColor);
-    setHighlighted(true);
-    setTimeout(() => setHighlighted(false), 1800);
+  const handleSaveEdit = async (item: VocabItem) => {
+    if (!editingMeaning.trim()) return;
+    await updateVocabItemMeaning(item.pageUrl, item.id, editingMeaning);
+    setEditingId(null);
+    showToast('Updated meaning');
+  };
+
+  const handleExportExcel = () => {
+    const targetList = viewTab === 'current' ? currentPageWords : allWords;
+    if (targetList.length === 0) {
+      showToast('No words to export yet');
+      return;
+    }
+    const suffix = viewTab === 'current' ? 'current-page' : 'all-pages';
+    exportVocabToExcel(
+      targetList,
+      `project-x-vocab-${suffix}-${new Date().toISOString().slice(0, 10)}.xlsx`
+    );
+    showToast(`Exported ${targetList.length} word(s) to Excel (.xlsx)`);
   };
 
   const handleOptionsClick = () => {
@@ -91,353 +159,438 @@ export const SidePanelApp: React.FC<{ embedded?: boolean; onOpenOptions?: () => 
         display: 'flex',
         flexDirection: 'column',
         minHeight: embedded ? '100%' : '100vh',
-        backgroundColor: 'var(--bg-primary)',
-        color: 'var(--text-primary)',
+        backgroundColor: 'var(--clay-canvas)',
+        color: 'var(--clay-text-primary)',
+        padding: '12px 14px',
+        gap: 12,
       }}
     >
-      {/* Top Header */}
+      {/* Floating 3D Clay Header Card */}
       <header
+        className="clay-card"
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '12px 16px',
-          backgroundColor: 'var(--bg-surface)',
-          borderBottom: '1px solid var(--border-color)',
-          position: 'sticky',
-          top: 0,
-          zIndex: 10,
+          padding: '12px 14px',
+          borderRadius: 'var(--clay-radius-md)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div
             style={{
-              width: 30,
-              height: 30,
-              borderRadius: 8,
-              backgroundColor: 'var(--accent-primary)',
+              width: 36,
+              height: 36,
+              borderRadius: 12,
+              background: 'var(--clay-accent-gradient)',
+              boxShadow: 'var(--clay-accent-shadow)',
               color: '#fff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontWeight: 700,
+              fontWeight: 800,
             }}
           >
-            <Layers size={16} />
+            <Layers size={18} />
           </div>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.2 }}>
-              Project X
+            <div style={{ fontSize: 15, fontWeight: 800, lineHeight: 1.2 }}>
+              Project X Vocab
             </div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-              Side Panel Companion
+            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--clay-text-muted)' }}>
+              Select • Highlight • Hover • Export
             </div>
           </div>
         </div>
 
-        <button
-          type="button"
-          className="btn btn-secondary"
-          onClick={handleOptionsClick}
-          title="Open Extension Options"
-          style={{ padding: '6px 10px' }}
-        >
-          <Settings size={14} />
-          <span>Options</span>
-        </button>
-      </header>
-
-      {/* Navigation Tabs */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: 6,
-          padding: '10px 16px 0',
-        }}
-      >
-        <button
-          type="button"
-          className={activeSection === 'workspace' ? 'btn btn-primary' : 'btn btn-secondary'}
-          onClick={() => setActiveSection('workspace')}
-        >
-          <BookOpen size={14} />
-          <span>Quick Notes ({settings.notes.length})</span>
-        </button>
-        <button
-          type="button"
-          className={activeSection === 'inspector' ? 'btn btn-primary' : 'btn btn-secondary'}
-          onClick={() => {
-            setActiveSection('inspector');
-            refreshTabInfo();
-          }}
-        >
-          <Globe size={14} />
-          <span>Page Context</span>
-        </button>
-      </div>
-
-      {/* Main Content */}
-      <main
-        style={{
-          flex: 1,
-          padding: 16,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 14,
-        }}
-      >
-        {/* Active Page Banner */}
-        <div className="card" style={{ padding: 12 }}>
-          <div
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <select
+            className="clay-input"
+            value={settings.targetLang}
+            onChange={(e) => saveSettings({ targetLang: e.target.value })}
+            title="Target translation language"
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 8,
+              width: 'auto',
+              padding: '6px 10px',
+              fontSize: 11,
+              fontWeight: 800,
+              borderRadius: 12,
+              cursor: 'pointer',
             }}
           >
-            <span className="badge">
-              <Sparkles size={11} />
-              Active Tab
+            {SUPPORTED_LANGUAGES.map((lang) => (
+              <option key={lang.code} value={lang.code}>
+                {lang.code.toUpperCase()}
+              </option>
+            ))}
+          </select>
+
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={handleOptionsClick}
+            title="Open Extension Options"
+            style={{ padding: '7px 10px', borderRadius: 12 }}
+          >
+            <Settings size={14} />
+          </button>
+        </div>
+      </header>
+
+      {toastMsg && (
+        <div
+          className="clay-badge"
+          style={{
+            justifyContent: 'center',
+            padding: '8px 14px',
+            fontSize: 12,
+            width: '100%',
+          }}
+        >
+          <Sparkles size={13} />
+          <span>{toastMsg}</span>
+        </div>
+      )}
+
+      {/* Active Webpage Summary Clay Card */}
+      <div className="clay-card" style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span className="clay-badge">
+            <Globe size={12} />
+            <span>Current Page URL</span>
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--clay-text-muted)' }}>
+              {currentPageWords.length} highlighted
             </span>
             <button
               type="button"
               className="btn btn-ghost"
               onClick={refreshTabInfo}
-              title="Refresh active tab info"
+              title="Refresh active tab"
               style={{ padding: 4 }}
             >
               <RefreshCw size={13} />
             </button>
           </div>
+        </div>
+
+        <div>
           <div
             style={{
               fontSize: 13,
-              fontWeight: 600,
+              fontWeight: 800,
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
             }}
           >
-            {activeTab?.title || 'Detecting active tab...'}
+            {activeTab?.title || 'Active Web Article'}
           </div>
           <div
             style={{
               fontSize: 11,
-              color: 'var(--text-muted)',
+              fontWeight: 600,
+              color: 'var(--clay-text-muted)',
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
-              marginBottom: 10,
             }}
           >
-            {activeTab?.url || 'chrome://newtab'}
+            {activeTab?.normalizedUrl || 'https://developer.chrome.com/docs/extensions'}
           </div>
-
-          {settings.enablePageHighlighter && (
-            <button
-              type="button"
-              className="btn btn-secondary"
-              style={{ width: '100%' }}
-              onClick={handleHighlight}
-            >
-              {highlighted ? <Check size={14} /> : <Highlighter size={14} />}
-              <span>
-                {highlighted ? 'Page Headings Highlighted!' : 'Highlight Page Headings'}
-              </span>
-            </button>
-          )}
         </div>
 
-        {activeSection === 'workspace' ? (
-          <>
-            {/* Add Quick Note Form */}
-            <form onSubmit={handleAddNote} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>
-                Capture Page Note
-              </div>
-              <input
-                type="text"
-                className="input"
-                placeholder="Note title..."
-                value={noteTitle}
-                onChange={(e) => setNoteTitle(e.target.value)}
-              />
-              <textarea
-                className="textarea"
-                rows={3}
-                placeholder="Write a snippet, checklist, or takeaway from this page..."
-                value={noteContent}
-                onChange={(e) => setNoteContent(e.target.value)}
-              />
-              <button type="submit" className="btn btn-primary">
-                <Plus size={14} />
-                <span>Save to Extension Storage</span>
-              </button>
-            </form>
+        {/* Quick Translate & Highlight Form */}
+        <form onSubmit={handleQuickTranslate} style={{ display: 'flex', gap: 8 }}>
+          <input
+            type="text"
+            className="clay-input"
+            placeholder="Type a word/phrase to translate & highlight..."
+            value={quickInput}
+            onChange={(e) => setQuickInput(e.target.value)}
+            style={{ flex: 1, padding: '8px 12px', fontSize: 12 }}
+          />
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={translatingQuick}
+            style={{ padding: '8px 12px', flexShrink: 0 }}
+          >
+            <Plus size={14} />
+            <span>{translatingQuick ? '...' : 'Add'}</span>
+          </button>
+        </form>
+      </div>
 
-            {/* Saved Notes List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {settings.notes.length === 0 ? (
-                <div
-                  className="card"
-                  style={{
-                    textAlign: 'center',
-                    color: 'var(--text-muted)',
-                    fontSize: 13,
-                    padding: '24px 16px',
-                  }}
-                >
-                  No notes saved yet. Add your first note above!
-                </div>
-              ) : (
-                settings.notes.map((note) => (
-                  <div
-                    key={note.id}
-                    className="card"
-                    style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: 12 }}
-                  >
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        justifyContent: 'space-between',
-                        gap: 8,
-                      }}
-                    >
-                      <div style={{ fontSize: 13, fontWeight: 600 }}>{note.title}</div>
-                      <button
-                        type="button"
-                        className="btn btn-ghost"
-                        onClick={() => handleDeleteNote(note.id)}
-                        style={{ padding: 4, color: 'var(--danger)' }}
-                        title="Delete note"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
-                    <p
-                      style={{
-                        fontSize: 12,
-                        color: 'var(--text-secondary)',
-                        whiteSpace: 'pre-wrap',
-                      }}
-                    >
-                      {note.content}
-                    </p>
-                    {note.url && (
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          marginTop: 4,
-                          paddingTop: 6,
-                          borderTop: '1px solid var(--border-color)',
-                          fontSize: 11,
-                          color: 'var(--text-muted)',
-                        }}
-                      >
-                        <span>{new Date(note.createdAt).toLocaleDateString()}</span>
-                        <a
-                          href={note.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 4,
-                            color: 'var(--accent-primary)',
-                            textDecoration: 'none',
-                          }}
-                        >
-                          <span>Source</span>
-                          <ExternalLink size={11} />
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-          </>
-        ) : (
-          /* Page Context Inspector */
-          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ fontSize: 13, fontWeight: 600 }}>Content Script Metrics</div>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: 10,
-              }}
-            >
-              <div
-                style={{
-                  padding: 12,
-                  borderRadius: 'var(--radius-sm)',
-                  backgroundColor: 'var(--bg-elevated)',
-                }}
-              >
-                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Word Count</div>
-                <div style={{ fontSize: 18, fontWeight: 700 }}>
-                  {activeTab?.wordCount ?? '—'}
-                </div>
-              </div>
-              <div
-                style={{
-                  padding: 12,
-                  borderRadius: 'var(--radius-sm)',
-                  backgroundColor: 'var(--bg-elevated)',
-                }}
-              >
-                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Headings</div>
-                <div style={{ fontSize: 18, fontWeight: 700 }}>
-                  {activeTab?.headingCount ?? '—'}
-                </div>
-              </div>
-            </div>
+      {/* Recessed Clay Segmented Switcher */}
+      <div className="clay-recessed-track" style={{ gridTemplateColumns: '1fr 1fr' }}>
+        <button
+          type="button"
+          className={viewTab === 'current' ? 'btn btn-primary' : 'btn btn-ghost'}
+          onClick={() => setViewTab('current')}
+          style={{ borderRadius: 14, padding: '8px 10px', fontSize: 12 }}
+        >
+          <BookOpen size={14} />
+          <span>This Page ({currentPageWords.length})</span>
+        </button>
+        <button
+          type="button"
+          className={viewTab === 'all' ? 'btn btn-primary' : 'btn btn-ghost'}
+          onClick={() => setViewTab('all')}
+          style={{ borderRadius: 14, padding: '8px 10px', fontSize: 12 }}
+        >
+          <Globe size={14} />
+          <span>All Pages ({allWords.length})</span>
+        </button>
+      </div>
 
-            <div
-              style={{
-                padding: 12,
-                borderRadius: 'var(--radius-sm)',
-                backgroundColor: 'var(--bg-elevated)',
-                fontSize: 12,
-              }}
-            >
-              <div style={{ fontWeight: 600, marginBottom: 4 }}>Current Preferences</div>
-              <div style={{ color: 'var(--text-secondary)' }}>
-                • Theme: <strong>{settings.theme}</strong>
-              </div>
-              <div style={{ color: 'var(--text-secondary)' }}>
-                • Accent: <strong>{settings.accentColor}</strong>
-              </div>
-              <div style={{ color: 'var(--text-secondary)' }}>
-                • Toolbar Click Opens Side Panel:{' '}
-                <strong>{settings.openPanelOnActionClick ? 'Yes' : 'No (Popup)'}</strong>
-              </div>
+      {/* Search & Export Action Row */}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ position: 'relative', flex: 1 }}>
+          <Search
+            size={14}
+            style={{
+              position: 'absolute',
+              left: 12,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: 'var(--clay-text-muted)',
+            }}
+          />
+          <input
+            type="text"
+            className="clay-input"
+            placeholder="Search highlighted words..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{ paddingLeft: 32, paddingRight: 10, paddingTop: 8, paddingBottom: 8, fontSize: 12 }}
+          />
+        </div>
+
+        <button
+          type="button"
+          className="btn btn-emerald"
+          onClick={handleExportExcel}
+          title="Export words to Excel (.xlsx) with Source Text & Translated Meaning"
+          style={{ padding: '8px 13px', fontSize: 12, flexShrink: 0 }}
+        >
+          <FileSpreadsheet size={15} />
+          <span>Export Excel</span>
+        </button>
+      </div>
+
+      {/* Highlighted Words List */}
+      <main
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 10,
+        }}
+      >
+        {displayedWords.length === 0 ? (
+          <div
+            className="clay-card"
+            style={{
+              textAlign: 'center',
+              padding: '28px 16px',
+              color: 'var(--clay-text-muted)',
+              fontSize: 13,
+              fontWeight: 600,
+            }}
+          >
+            <Sparkles size={22} style={{ marginBottom: 8, color: 'var(--accent-primary)' }} />
+            <div>
+              {viewTab === 'current'
+                ? 'No words highlighted on this page yet. Select any text on the page to translate & highlight!'
+                : 'No saved vocabulary matching your search.'}
             </div>
           </div>
+        ) : (
+          displayedWords.map((item) => (
+            <div
+              key={item.id}
+              className="clay-card"
+              style={{
+                padding: '12px 14px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 8,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                  <span
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 800,
+                      color: 'var(--clay-text-primary)',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {item.sourceText}
+                  </span>
+                  <span className="clay-badge" style={{ fontSize: 10, padding: '2px 7px' }}>
+                    {item.targetLang.toUpperCase()}
+                  </span>
+                </div>
+
+                {/* Tactile Clay Micro-Action Buttons */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ padding: 6, borderRadius: 10 }}
+                    onClick={() => speakWord(item.sourceText)}
+                    title="Pronounce word"
+                  >
+                    <Volume2 size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ padding: 6, borderRadius: 10 }}
+                    onClick={() => scrollToVocabOnPage(item.sourceText)}
+                    title="Scroll to highlighted word on page"
+                  >
+                    <Crosshair size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ padding: 6, borderRadius: 10 }}
+                    onClick={() => {
+                      setEditingId(item.id);
+                      setEditingMeaning(item.translatedText);
+                    }}
+                    title="Edit translated meaning"
+                  >
+                    <Edit3 size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ padding: 6, borderRadius: 10, color: 'var(--danger)' }}
+                    onClick={() => handleDeleteWord(item)}
+                    title="Remove highlight & delete word"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Translated Meaning Box or Inline Edit */}
+              {editingId === item.id ? (
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    className="clay-input"
+                    value={editingMeaning}
+                    onChange={(e) => setEditingMeaning(e.target.value)}
+                    style={{ flex: 1, padding: '6px 10px', fontSize: 12 }}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    style={{ padding: '6px 10px' }}
+                    onClick={() => handleSaveEdit(item)}
+                  >
+                    <Check size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ padding: '6px 10px' }}
+                    onClick={() => setEditingId(null)}
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    backgroundColor: 'var(--clay-recessed)',
+                    boxShadow: 'var(--clay-shadow-inset)',
+                    borderRadius: 12,
+                    padding: '8px 12px',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: 'var(--clay-text-secondary)',
+                  }}
+                >
+                  {item.translatedText}
+                </div>
+              )}
+
+              {viewTab === 'all' && (
+                <div
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 600,
+                    color: 'var(--clay-text-muted)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    gap: 8,
+                  }}
+                >
+                  <span
+                    style={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    📄 {item.pageTitle || item.pageUrl}
+                  </span>
+                  <span>{new Date(item.createdAt).toLocaleDateString()}</span>
+                </div>
+              )}
+            </div>
+          ))
         )}
       </main>
 
-      {/* Footer */}
+      {/* Bottom Clay Footer */}
       <footer
+        className="clay-card"
         style={{
-          padding: '10px 16px',
-          borderTop: '1px solid var(--border-color)',
-          backgroundColor: 'var(--bg-surface)',
+          padding: '10px 14px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           fontSize: 11,
-          color: 'var(--text-muted)',
+          fontWeight: 700,
+          color: 'var(--clay-text-muted)',
         }}
       >
-        <span>Manifest V3 • Cross-Browser</span>
-        <span>Shortcut: {settings.customShortcutHint}</span>
+        <span>CSS ::highlight() Active</span>
+        {viewTab === 'current' && currentPageWords.length > 0 ? (
+          <button
+            type="button"
+            className="btn btn-ghost"
+            style={{ padding: '2px 8px', fontSize: 11, color: 'var(--danger)' }}
+            onClick={async () => {
+              if (activeTab?.url) {
+                await clearPageVocab(activeTab.url);
+                showToast('Cleared page highlights');
+              }
+            }}
+          >
+            Clear Page
+          </button>
+        ) : (
+          <span>Total Saved: {allWords.length}</span>
+        )}
       </footer>
     </div>
   );

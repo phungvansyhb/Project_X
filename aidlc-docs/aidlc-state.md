@@ -2,10 +2,10 @@
 
 ## Project Metadata
 - **Project Name**: Project X — Web Selection Translator & Vocabulary Highlighter
-- **Project Type**: Brownfield (Base MV3 Vite + React 19 + TypeScript scaffold completed; evolving into Vocabulary Translator & Highlighter with **Claymorphism UI**)
-- **Active Phase**: `CONSTRUCTION` (Executing Per-Unit Bolts)
-- **Active Unit**: Completed `UNIT-01`, `UNIT-02` & `UNIT-03` → Ready for **`UNIT-04`**
-- **Last Updated**: `2026-11-15T19:51:30-08:00`
+- **Project Type**: Brownfield (Base MV3 Vite + React 19 + TypeScript scaffold completed; evolved into Vocabulary Translator & Highlighter with **Claymorphism UI**)
+- **Active Phase**: `OPERATIONS` (Construction Phase `UNIT-01` → `UNIT-04` and Build & Test Verification Completed)
+- **Active Stage**: Completed `Stage 3.1` & `Stage 3.2` — Ready for Release / User Testing
+- **Last Updated**: `2026-11-15T20:05:30-08:00`
 
 ---
 
@@ -20,23 +20,23 @@
 
 ---
 
-## Phase 2: CONSTRUCTION Progress (Per-Unit Bolts)
+## Phase 2: CONSTRUCTION Progress (Completed)
 - [x] **`UNIT-01`: Vocabulary Storage Schema, Claymorphism CSS Design System & Excel (`.xlsx`) Exporter** (`src/shared/storage.ts`, `src/shared/styles.css`, `src/shared/excelExport.ts`)
 - [x] **`UNIT-02`: Background Translation Service & Message Router** (`src/background/translator.ts`, `src/background/index.ts`, `src/shared/messaging.ts`)
 - [x] **`UNIT-03`: Content Script — Shadow DOM Claymorphism Selection Popup, `CSS.highlights` Engine & Hover Tooltip** (`src/content/index.ts`)
-- [ ] **`UNIT-04`: Claymorphism Side Panel, Popup, Options Page & Cross-Browser Manifest Upgrade** (`src/sidepanel/SidePanelApp.tsx`, `src/popup/PopupApp.tsx`, `src/options/OptionsApp.tsx`, `src/dev/main.tsx`, `public/manifest.json`)
-- [ ] **Stage 2.5: Full Build & Verification** (`npm run typecheck && npm run build`)
+- [x] **`UNIT-04`: Claymorphism Side Panel, Popup, Options Page & Cross-Browser Manifest Upgrade** (`src/sidepanel/SidePanelApp.tsx`, `src/popup/PopupApp.tsx`, `src/options/OptionsApp.tsx`, `src/dev/main.tsx`, `public/manifest.json`)
+- [x] **Stage 2.5: Full Build & Verification** (`npm run typecheck && npm run build`)
 
 ---
 
 ## Phase 3: OPERATIONS Progress
-- [ ] **Stage 3.1: Cross-Browser Bundle Verification** (`dist/` verified for Chrome, Edge, Brave, Firefox, Safari)
-- [ ] **Stage 3.2: Release Documentation Update** (`README.md`, [`release-and-packaging.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/operations/release-and-packaging.md))
+- [x] **Stage 3.1: Cross-Browser Bundle Verification** (`dist/` verified for Chrome, Edge, Brave, Firefox, Safari)
+- [x] **Stage 3.2: Release Documentation Update** (`README.md`, [`release-and-packaging.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/operations/release-and-packaging.md))
 
 ---
 
 ## Session Recovery Instructions
-To resume work in any future session:
-1. Read this file (`aidlc-docs/aidlc-state.md`) and locate the first unchecked `[ ]` item above (`UNIT-04`).
-2. Consult [`aidlc-docs/construction/plans/construction-plan.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/construction/plans/construction-plan.md) for the active Unit's detailed specification.
+To resume work or add new features in any future session:
+1. Read this file (`aidlc-docs/aidlc-state.md`).
+2. Add any new feature scope as a new Unit in [`aidlc-docs/construction/plans/construction-plan.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/construction/plans/construction-plan.md).
 3. After completing any user prompt, update this file and append a new entry to [`aidlc-docs/audit.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/audit.md).

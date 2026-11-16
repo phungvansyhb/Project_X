@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Project X Extension",
-  "short_name": "Project X",
-  "version": "0.1.0",
-  "description": "Cross-browser Manifest V3 extension template with React, TypeScript, Side Panel, and Options Page.",
+  "name": "Project X — Web Translator & Vocabulary Highlighter",
+  "short_name": "Project X Vocab",
+  "version": "0.2.0",
+  "description": "Select text on any webpage to translate, highlight with CSS ::highlight(), view meaning on hover, and export saved words by URL to Excel (.xlsx).",
   "icons": {
     "16": "icons/icon-16.png",
     "32": "icons/icon-32.png",
@@ -11,7 +11,7 @@
     "128": "icons/icon-128.png"
   },
   "action": {
-    "default_title": "Project X — Open Side Panel",
+    "default_title": "Project X — View Highlighted Vocabulary",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon-16.png",
@@ -22,6 +22,11 @@
   },
   "side_panel": {
     "default_path": "sidepanel.html"
+  },
+  "sidebar_action": {
+    "default_title": "Project X Vocab",
+    "default_panel": "sidepanel.html",
+    "default_icon": "icons/icon-32.png"
   },
   "options_page": "options.html",
   "options_ui": {
@@ -44,5 +49,14 @@
     "sidePanel",
     "activeTab",
     "contextMenus"
-  ]
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "project-x-vocab@extension.local",
+      "strict_min_version": "128.0"
+    }
+  }
 }

@@ -28,7 +28,7 @@
   - Scan DOM text nodes with `TreeWalker` on load and on `storage.onChanged` to create `Range` objects for all occurrences of saved words on the current URL and register them into `CSS.highlights.set('project-x-vocab', highlight)`.
   - Listen for `mousemove` (throttled via `requestAnimationFrame`) → hit-test `Range.getClientRects()` → show Shadow DOM hover tooltip with meaning, pronunciation button, and delete button.
 
-### [ ] `UNIT-04`: Side Panel, Popup, Options Page & Dev Workbench
+### [x] `UNIT-04`: Side Panel, Popup, Options Page & Dev Workbench
 - **Files**: `src/sidepanel/SidePanelApp.tsx`, `src/popup/PopupApp.tsx`, `src/options/OptionsApp.tsx`, `src/dev/main.tsx`, `public/manifest.json`
 - **Key Responsibilities**:
   - Side Panel & Popup display **Current Page Words** (filtered by active tab URL) and **All Pages Words**, with search, delete, scroll-to-highlight, and **Export Excel (`.xlsx`)**.
