@@ -86,6 +86,22 @@ export const SidePanelApp: React.FC<{
 
   const allWords = useMemo(() => getAllVocabItems(settings), [settings]);
 
+function renderHighlightedContext(sentence: string, target: string): React.ReactNode {
+  const cleanTarget = target.trim();
+  if (!cleanTarget) return sentence;
+  const escaped = cleanTarget.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const parts = sentence.split(new RegExp(`(${escaped})`, 'gi'));
+  return parts.map((part, idx) =>
+    part.toLowerCase() === cleanTarget.toLowerCase() ? (
+      <strong key={idx} style={{ color: 'var(--clay-text-primary)', fontWeight: 800 }}>
+        {part}
+      </strong>
+    ) : (
+      <React.Fragment key={idx}>{part}</React.Fragment>
+    )
+  );
+}
+
   const displayedWords = useMemo(() => {
     const base = viewTab === 'current' ? currentPageWords : allWords;
     if (!searchQuery.trim()) return base;
@@ -94,6 +110,7 @@ export const SidePanelApp: React.FC<{
       (item) =>
         item.sourceText.toLowerCase().includes(q) ||
         item.translatedText.toLowerCase().includes(q) ||
+        (item.contextSentence || '').toLowerCase().includes(q) ||
         item.pageTitle.toLowerCase().includes(q)
     );
   }, [viewTab, currentPageWords, allWords, searchQuery]);
@@ -439,6 +456,21 @@ export const SidePanelApp: React.FC<{
                       {item.phonetic}
                     </span>
                   )}
+                  {item.partOfSpeech && (
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 800,
+                        padding: '2px 7px',
+                        borderRadius: 999,
+                        backgroundColor: 'rgba(16, 185, 129, 0.14)',
+                        color: '#059669',
+                        textTransform: 'lowercase',
+                      }}
+                    >
+                      {item.partOfSpeech}
+                    </span>
+                  )}
                   <span className="clay-badge" style={{ fontSize: 10, padding: '2px 7px' }}>
                     {item.targetLang.toUpperCase()}
                   </span>
@@ -528,6 +560,22 @@ export const SidePanelApp: React.FC<{
                   }}
                 >
                   {item.translatedText}
+                </div>
+              )}
+
+              {item.contextSentence && (
+                <div
+                  style={{
+                    fontSize: 11,
+                    lineHeight: 1.45,
+                    color: 'var(--clay-text-muted)',
+                    borderLeft: '3px solid var(--accent-primary)',
+                    paddingLeft: 9,
+                    fontStyle: 'italic',
+                  }}
+                  title={item.contextSentence}
+                >
+                  &ldquo;{renderHighlightedContext(item.contextSentence, item.sourceText)}&rdquo;
                 </div>
               )}
 

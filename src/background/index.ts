@@ -95,9 +95,22 @@ if (api?.runtime?.onMessage) {
             return;
           }
 
-          const result = await translateText(text, settings.targetLang, settings);
           const pageUrl = message.pageUrl || sender?.tab?.url || 'https://web.article';
           const pageTitle = message.pageTitle || sender?.tab?.title || 'Web Article';
+          const contextSentence =
+            typeof message.contextSentence === 'string'
+              ? message.contextSentence.trim() || undefined
+              : undefined;
+          const contextParagraph =
+            typeof message.contextParagraph === 'string'
+              ? message.contextParagraph.trim() || undefined
+              : undefined;
+
+          const result = await translateText(text, settings.targetLang, settings, {
+            sentence: contextSentence,
+            paragraph: contextParagraph,
+            pageTitle,
+          });
 
           let savedItem;
           if (message.autoSave ?? settings.autoTranslateOnSelect) {
@@ -105,6 +118,9 @@ if (api?.runtime?.onMessage) {
               sourceText: result.sourceText,
               translatedText: result.translatedText,
               phonetic: result.phonetic,
+              partOfSpeech: result.partOfSpeech,
+              contextSentence,
+              alternativeMeanings: result.alternativeMeanings,
               targetLang: result.targetLang,
               pageUrl,
               pageTitle,
@@ -160,19 +176,43 @@ if (api?.contextMenus?.onClicked) {
   api.contextMenus.onClicked.addListener(async (info, tab) => {
     if (info.menuItemId === CONTEXT_MENU_ID && info.selectionText) {
       const settings = await getSettings();
+      const pageTitle = tab?.title || 'Web Article';
+      let contextSentence: string | undefined;
+      let contextParagraph: string | undefined;
+
+      if (tab?.id && api.tabs?.sendMessage) {
+        try {
+          const ctxRes = (await api.tabs.sendMessage(tab.id, {
+            type: 'GET_SELECTION_CONTEXT',
+          })) as { contextSentence?: string; contextParagraph?: string } | undefined;
+          contextSentence = ctxRes?.contextSentence;
+          contextParagraph = ctxRes?.contextParagraph;
+        } catch {
+          // Ignore if content script is unavailable on this tab
+        }
+      }
+
       const result = await translateText(
         info.selectionText,
         settings.targetLang,
-        settings
+        settings,
+        {
+          sentence: contextSentence,
+          paragraph: contextParagraph,
+          pageTitle,
+        }
       );
 
       await saveVocabItem({
         sourceText: result.sourceText,
         translatedText: result.translatedText,
         phonetic: result.phonetic,
+        partOfSpeech: result.partOfSpeech,
+        contextSentence,
+        alternativeMeanings: result.alternativeMeanings,
         targetLang: result.targetLang,
         pageUrl: tab?.url || 'https://web.article',
-        pageTitle: tab?.title || 'Web Article',
+        pageTitle,
       });
 
       if (tab?.id && api.tabs?.sendMessage) {

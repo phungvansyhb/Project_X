@@ -281,6 +281,58 @@ export const OptionsApp: React.FC<{ embedded?: boolean }> = ({ embedded = false 
                 </div>
               )}
 
+              {/* Context-Aware Translation Toggle */}
+              <div
+                onClick={() => {
+                  const next = !settings.enableContextTranslation;
+                  saveSettings({ enableContextTranslation: next });
+                  notify(
+                    next
+                      ? 'Context-aware translation enabled'
+                      : 'Context-aware translation disabled'
+                  );
+                }}
+                style={{
+                  padding: '12px 14px',
+                  borderRadius: 16,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                  backgroundColor: settings.enableContextTranslation
+                    ? 'var(--clay-surface-tinted)'
+                    : 'var(--clay-recessed)',
+                  boxShadow: settings.enableContextTranslation
+                    ? 'var(--clay-shadow-sm)'
+                    : 'var(--clay-shadow-inset)',
+                  border: settings.enableContextTranslation
+                    ? '2px solid var(--accent-primary)'
+                    : '2px solid transparent',
+                }}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <div style={{ fontSize: 13, fontWeight: 800 }}>
+                    🎯 Context-Aware Translation (Recommended)
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--clay-text-muted)' }}>
+                    Uses the surrounding paragraph (~400 chars) &amp; article title to pick the
+                    exact meaning for polysemous words (e.g., &ldquo;river bank&rdquo; vs
+                    &ldquo;central bank&rdquo;).
+                  </div>
+                </div>
+                <span
+                  className="clay-badge"
+                  style={{
+                    flexShrink: 0,
+                    fontSize: 11,
+                    padding: '4px 10px',
+                  }}
+                >
+                  {settings.enableContextTranslation ? 'ON' : 'OFF'}
+                </span>
+              </div>
+
               {/* Selection Trigger Mode */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div style={{ fontSize: 13, fontWeight: 800 }}>

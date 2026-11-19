@@ -13,8 +13,11 @@ export type ExtensionMessage =
       text: string;
       pageUrl?: string;
       pageTitle?: string;
+      contextSentence?: string;
+      contextParagraph?: string;
       autoSave?: boolean;
     }
+  | { type: 'GET_SELECTION_CONTEXT' }
   | { type: 'FETCH_IPA'; text: string }
   | { type: 'GET_ACTIVE_TAB_INFO' }
   | { type: 'HIGHLIGHT_ACTIVE_PAGE'; color?: string }
@@ -48,6 +51,8 @@ export async function requestTranslation(params: {
   text: string;
   pageUrl?: string;
   pageTitle?: string;
+  contextSentence?: string;
+  contextParagraph?: string;
   autoSave?: boolean;
 }): Promise<TranslationResponse> {
   const api = getExtensionApi();
@@ -64,6 +69,8 @@ export async function requestTranslation(params: {
         text: cleanText,
         pageUrl: params.pageUrl || window.location.href,
         pageTitle: params.pageTitle || document.title,
+        contextSentence: params.contextSentence,
+        contextParagraph: params.contextParagraph,
         autoSave: params.autoSave ?? true,
       })) as TranslationResponse | undefined;
 
@@ -78,7 +85,12 @@ export async function requestTranslation(params: {
   // 2. Direct execution fallback (Vite Dev Workbench or extension page context)
   try {
     const settings = await getSettings();
-    const result = await translateText(cleanText, settings.targetLang, settings);
+    const pageTitle = params.pageTitle || document.title;
+    const result = await translateText(cleanText, settings.targetLang, settings, {
+      sentence: params.contextSentence,
+      paragraph: params.contextParagraph,
+      pageTitle,
+    });
     let savedItem: VocabItem | undefined;
 
     if (params.autoSave ?? settings.autoTranslateOnSelect) {
@@ -86,9 +98,12 @@ export async function requestTranslation(params: {
         sourceText: result.sourceText,
         translatedText: result.translatedText,
         phonetic: result.phonetic,
+        partOfSpeech: result.partOfSpeech,
+        contextSentence: params.contextSentence,
+        alternativeMeanings: result.alternativeMeanings,
         targetLang: result.targetLang,
         pageUrl: params.pageUrl || window.location.href,
-        pageTitle: params.pageTitle || document.title,
+        pageTitle,
       });
       savedItem = saved.item;
     }

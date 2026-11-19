@@ -17,6 +17,9 @@ export interface VocabItem {
   sourceText: string;
   translatedText: string;
   phonetic?: string;
+  partOfSpeech?: string;
+  contextSentence?: string;
+  alternativeMeanings?: string[];
   targetLang: string;
   pageUrl: string;
   pageTitle: string;
@@ -42,6 +45,7 @@ export interface ExtensionSettings {
   targetLang: string;
   translationProvider: TranslationProvider;
   apiKey: string;
+  enableContextTranslation: boolean;
   autoTranslateOnSelect: boolean;
   selectionMode: SelectionTriggerMode;
   highlightColor: HighlightColor;
@@ -73,6 +77,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   targetLang: 'vi',
   translationProvider: 'google',
   apiKey: '',
+  enableContextTranslation: true,
   autoTranslateOnSelect: true,
   selectionMode: 'auto',
   highlightColor: 'yellow',
@@ -240,6 +245,9 @@ export async function saveVocabItem(input: {
   sourceText: string;
   translatedText: string;
   phonetic?: string;
+  partOfSpeech?: string;
+  contextSentence?: string;
+  alternativeMeanings?: string[];
   targetLang?: string;
   pageUrl: string;
   pageTitle?: string;
@@ -256,11 +264,20 @@ export async function saveVocabItem(input: {
   };
 
   const existingItem = existingGroup.items[wordKey];
+  const cleanAlts = input.alternativeMeanings
+    ?.map((m) => m.trim())
+    .filter(Boolean)
+    .slice(0, 6);
+
   const item: VocabItem = {
     id: existingItem?.id || `vocab-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     sourceText: input.sourceText.trim().replace(/\s+/g, ' '),
     translatedText: input.translatedText.trim(),
     phonetic: input.phonetic?.trim() || existingItem?.phonetic,
+    partOfSpeech: input.partOfSpeech?.trim() || existingItem?.partOfSpeech,
+    contextSentence: input.contextSentence?.trim() || existingItem?.contextSentence,
+    alternativeMeanings:
+      cleanAlts && cleanAlts.length > 0 ? cleanAlts : existingItem?.alternativeMeanings,
     targetLang: input.targetLang || current.targetLang,
     pageUrl: normalizedUrl,
     pageTitle: input.pageTitle || existingGroup.pageTitle || 'Web Article',

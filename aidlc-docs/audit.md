@@ -390,3 +390,47 @@
 - **Artifacts & Files Updated**:
   - [`aidlc-docs/audit.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/audit.md) — Appended Prompt 26 audit entry prior to committing.
 - **Verification & Gate Status**: Staging, committing, and pushing to `origin/main`.
+
+---
+
+## [2026-11-18T22:21:00-08:00] — Prompt 27: Plan `UNIT-06` (Context-Aware Word Translation & Disambiguation Engine)
+- **Phase / Stage**: `CONSTRUCTION / Planning UNIT-06`
+- **User Input**: `"/plan tăng độ chính xác của từ khi dịch tương ứng với ngữ cảnh của đoạn đang đọc"`
+- **Clarifications / Decisions**:
+  - **Translation Engines**: Upgrade all 4 engines — structured context prompt for **Gemini & OpenAI**, official `context` parameter for **DeepL**, and bracketed-sentence disambiguation + `dt=bd`/`dt=at` dictionary senses for **Google Translate Free**.
+  - **Context Window**: Smart paragraph window — target sentence + 1 preceding/following sentence within the same block (~400 chars max) plus `pageTitle` as domain hint.
+  - **UI & Storage**: Show `partOfSpeech` badge + clickable `alternativeMeanings` chips in Shadow DOM popup; persist `contextSentence` & `partOfSpeech` on `VocabItem` for review in Side Panel; add `enableContextTranslation` toggle in Options.
+- **Artifacts & Files Updated**:
+  - [`aidlc-docs/construction/plans/construction-plan.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/construction/plans/construction-plan.md) — Added `UNIT-06` specification.
+  - [`aidlc-docs/aidlc-state.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/aidlc-state.md) — Updated active phase/stage and added unchecked `UNIT-06`.
+  - [`aidlc-docs/audit.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/audit.md) — Appended Prompt 27 audit entry.
+- **Verification & Gate Status**: `UNIT-06` implementation plan ready; awaiting user approval (Gate Sign-Off) before modifying application source code.
+
+---
+
+## [2026-11-18T22:36:40-08:00] — Prompt 28: Implement `UNIT-06` (Context-Aware Word Translation & Disambiguation Engine)
+- **Phase / Stage**: `CONSTRUCTION / UNIT-06: Context-Aware Word Translation & Disambiguation Engine`
+- **User Input**: `"implement plan"`
+- **Clarifications / Decisions**:
+  - Executed approved `UNIT-06` plan end-to-end across storage, DOM context extraction, messaging/context-menu routing, all 4 translation engines (Google Translate Free, Gemini, OpenAI, DeepL), Shadow DOM popup/tooltip, Side Panel, Options Page, and Dev Workbench.
+- **Artifacts & Files Updated**:
+  - Created [`src/content/contextExtractor.ts`](file:///home/antigravity/phungvansyhb/Project_X/src/content/contextExtractor.ts) — Smart DOM block/sentence extractor with exact selection offset tracking, abbreviation-aware splitting, ~400-char paragraph windowing, and long-selection bypass.
+  - Updated [`src/shared/storage.ts`](file:///home/antigravity/phungvansyhb/Project_X/src/shared/storage.ts) — Added optional `partOfSpeech`, `contextSentence`, `alternativeMeanings` to `VocabItem` and `enableContextTranslation` (default `true`) to `ExtensionSettings`.
+  - Updated [`src/background/translator.ts`](file:///home/antigravity/phungvansyhb/Project_X/src/background/translator.ts) — Upgraded Gemini & OpenAI with structured JSON context prompts, DeepL with official `context` parameter, and Google Translate Free with `dt=t&dt=bd&dt=at` + parallel bracketed-sentence disambiguation (`«word»`) and fallback matching.
+  - Updated [`src/shared/messaging.ts`](file:///home/antigravity/phungvansyhb/Project_X/src/shared/messaging.ts) & [`src/background/index.ts`](file:///home/antigravity/phungvansyhb/Project_X/src/background/index.ts) — Routed `contextSentence` / `contextParagraph` on `TRANSLATE_TEXT` and added `GET_SELECTION_CONTEXT` for right-click context menu translations.
+  - Updated [`src/content/index.ts`](file:///home/antigravity/phungvansyhb/Project_X/src/content/index.ts) — Extracted context on selection, rendered `partOfSpeech` + `🎯 Context` badges and 1-click `alternativeMeanings` chips in Shadow DOM popup, and added `partOfSpeech` badge to hover tooltip.
+  - Updated [`src/sidepanel/SidePanelApp.tsx`](file:///home/antigravity/phungvansyhb/Project_X/src/sidepanel/SidePanelApp.tsx) — Displayed `partOfSpeech` badge and saved `contextSentence` quote (with target word highlighted) on vocab cards, and included `contextSentence` in search filter.
+  - Updated [`src/options/OptionsApp.tsx`](file:///home/antigravity/phungvansyhb/Project_X/src/options/OptionsApp.tsx) — Added **Context-Aware Translation** toggle.
+  - Updated [`src/dev/main.tsx`](file:///home/antigravity/phungvansyhb/Project_X/src/dev/main.tsx) — Added polysemous context demo paragraph (*bank*, *run*).
+  - Marked `UNIT-06` `[x]` in [`aidlc-docs/construction/plans/construction-plan.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/construction/plans/construction-plan.md) and [`aidlc-docs/aidlc-state.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/aidlc-state.md).
+- **Verification & Gate Status**: Unit assertions for `contextExtractor.ts` and `translator.ts` passed (`ALL UNIT-06 VERIFICATION ASSERTIONS PASSED!`); `npm run typecheck` and `npm run build` exited with code `0`.
+
+---
+
+## [2026-11-18T23:09:40-08:00] — Prompt 29: Commit & Push `UNIT-06` (Context-Aware Word Translation & Disambiguation Engine)
+- **Phase / Stage**: `OPERATIONS / Version Control Release Checkpoint after UNIT-06`
+- **User Input**: `"ok commit and push"`
+- **Clarifications / Decisions**: Stage, commit, and push completed `UNIT-06` (smart DOM paragraph context extraction, multi-engine context-aware translation for Google Free / Gemini / OpenAI / DeepL, POS & 1-click alternative meanings popup, Side Panel context quotes, Options toggle, and AI-DLC tracking docs) to `origin/main`.
+- **Artifacts & Files Updated**:
+  - [`aidlc-docs/audit.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/audit.md) — Appended Prompt 29 audit entry prior to committing.
+- **Verification & Gate Status**: Staging, committing, and pushing to `origin/main`.

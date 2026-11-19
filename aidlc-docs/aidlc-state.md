@@ -3,9 +3,9 @@
 ## Project Metadata
 - **Project Name**: LingoGlow (formerly Project X) — Instant Web Translator & Smart Vocab Highlighter
 - **Project Type**: Brownfield (MV3 Vite + React 19 + TypeScript Vocabulary Translator & Highlighter with **Claymorphism UI**)
-- **Active Phase**: `OPERATIONS` (`UNIT-01` → `UNIT-05` and Build & Asset Verification Completed)
-- **Active Stage**: Completed `UNIT-05` (**LingoGlow** Brand Identity, Claymorphism Icons/Promo Covers, Store Listing & README Showcase) — Ready for Release / Packaging
-- **Last Updated**: `2026-11-15T23:18:00-08:00`
+- **Active Phase**: `OPERATIONS` (`UNIT-01` → `UNIT-06` Completed & Verified)
+- **Active Stage**: Completed `UNIT-06` (**Context-Aware Word Translation & Disambiguation Engine**) — Verified via TypeScript check, Vite build & unit assertions
+- **Last Updated**: `2026-11-18T22:36:40-08:00`
 
 ---
 
@@ -26,6 +26,7 @@
 - [x] **`UNIT-03`: Content Script — Shadow DOM Claymorphism Selection Popup, `CSS.highlights` Engine & Hover Tooltip** (`src/content/index.ts`)
 - [x] **`UNIT-04`: Claymorphism Side Panel, Popup, Options Page & Cross-Browser Manifest Upgrade** (`src/sidepanel/SidePanelApp.tsx`, `src/popup/PopupApp.tsx`, `src/options/OptionsApp.tsx`, `src/dev/main.tsx`, `public/manifest.json`)
 - [x] **`UNIT-05`: Brand Identity Overhaul (`LingoGlow`), Claymorphism Logo/Cover Assets & Conversion-Focused Extension Introduction** (`public/manifest.json`, `public/icons/*`, `docs/assets/*`, `README.md`, `aidlc-docs/operations/store-listing.md`, HTML titles, UI headers & onboarding copy)
+- [x] **`UNIT-06`: Context-Aware Word Translation & Disambiguation Engine** (`src/content/contextExtractor.ts`, `src/background/translator.ts`, `src/background/index.ts`, `src/shared/messaging.ts`, `src/shared/storage.ts`, `src/content/index.ts`, `src/sidepanel/SidePanelApp.tsx`, `src/options/OptionsApp.tsx`, `src/dev/main.tsx`)
 - [x] **Stage 2.5: Full Build & Verification** (`npm run typecheck && npm run build`)
 
 ---

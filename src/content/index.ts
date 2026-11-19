@@ -4,6 +4,7 @@ import {
   getVocabForPage,
   saveVocabItem,
   removeVocabItem,
+  updateVocabItemMeaning,
   updateVocabItemPhonetic,
   ExtensionSettings,
   VocabItem,
@@ -11,6 +12,7 @@ import {
   STORAGE_KEY,
 } from '../shared/storage';
 import { requestTranslation, requestIpa } from '../shared/messaging';
+import { extractSelectionContext, SelectionContext } from './contextExtractor';
 
 interface HighlightedRangeEntry {
   range: Range;
@@ -359,6 +361,95 @@ const SHADOW_CLAY_CSS = `
   .px-action-btn:active {
     transform: translateY(2px);
   }
+
+  .px-meta-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 2px;
+  }
+
+  .px-pos-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 7px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: lowercase;
+    background: rgba(16, 185, 129, 0.14);
+    color: #059669;
+    letter-spacing: 0.02em;
+  }
+
+  .px-clay-root[data-theme='dark'] .px-pos-badge {
+    background: rgba(52, 211, 153, 0.18);
+    color: #6ee7b7;
+  }
+
+  .px-context-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    background: rgba(99, 102, 241, 0.14);
+    color: #4f46e5;
+  }
+
+  .px-clay-root[data-theme='dark'] .px-context-badge {
+    background: rgba(129, 140, 248, 0.2);
+    color: #c7d2fe;
+  }
+
+  .px-alts-wrap {
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .px-alts-label {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--clay-text-muted);
+  }
+
+  .px-alts-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .px-alt-chip {
+    border: none;
+    border-radius: 10px;
+    padding: 4px 9px;
+    font-size: 11px;
+    font-weight: 700;
+    background: var(--clay-surface);
+    color: var(--clay-text-secondary);
+    box-shadow: var(--clay-shadow-sm);
+    cursor: pointer;
+    transition: transform 0.13s ease, color 0.13s ease;
+    max-width: 100%;
+    text-align: left;
+    line-height: 1.3;
+  }
+
+  .px-alt-chip:hover {
+    transform: translateY(-1px);
+    color: var(--clay-text-primary);
+  }
+
+  .px-alt-chip:active {
+    transform: translateY(1px);
+  }
 `;
 
 export class ContentHighlighterController {
@@ -554,7 +645,8 @@ export class ContentHighlighterController {
   private async showTranslationPopup(
     selectedText: string,
     anchorRect: DOMRect,
-    forceTranslateAndSave = false
+    forceTranslateAndSave = false,
+    selectionContext?: SelectionContext
   ) {
     if (!this.rootContainer || !this.settings) return;
     this.clearSelectionPopover();
@@ -580,7 +672,7 @@ export class ContentHighlighterController {
       launcher.addEventListener('mousedown', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        this.showTranslationPopup(selectedText, anchorRect, true);
+        this.showTranslationPopup(selectedText, anchorRect, true, selectionContext);
       });
       this.rootContainer.appendChild(launcher);
       this.selectionPopoverEl = launcher as unknown as HTMLDivElement;
@@ -592,8 +684,8 @@ export class ContentHighlighterController {
     const pos = this.clampViewportPosition(
       anchorRect.left,
       anchorRect.bottom + 10,
-      300,
-      155
+      310,
+      190
     );
     popover.style.left = `${pos.left}px`;
     popover.style.top = `${pos.top}px`;
@@ -606,7 +698,7 @@ export class ContentHighlighterController {
         <span class="px-pill-badge">Translating...</span>
       </div>
       <div class="px-meaning-box" style="opacity: 0.75;">
-        ✨ Translating selection...
+        ✨ Translating in context...
       </div>
     `;
 
@@ -625,6 +717,8 @@ export class ContentHighlighterController {
       text: selectedText,
       pageUrl: window.location.href,
       pageTitle: document.title,
+      contextSentence: selectionContext?.contextSentence,
+      contextParagraph: selectionContext?.contextParagraph,
       autoSave: shouldAutoSave,
     });
 
@@ -652,7 +746,39 @@ export class ContentHighlighterController {
       this.applyPageHighlights();
     }
 
+    let activeMeaning = result.translatedText;
+    let activeAlternatives = [...(result.alternativeMeanings || [])];
+    let savedFlag = shouldAutoSave;
+
     const renderSavedState = (isSaved: boolean) => {
+      savedFlag = isSaved;
+      const metaBadges: string[] = [];
+      if (result.partOfSpeech) {
+        metaBadges.push(
+          `<span class="px-pos-badge">${escapeHtml(result.partOfSpeech)}</span>`
+        );
+      }
+      if (result.contextUsed) {
+        metaBadges.push(`<span class="px-context-badge" title="Translated using surrounding paragraph context">🎯 Context</span>`);
+      }
+
+      const altChipsHtml =
+        activeAlternatives.length > 0
+          ? `
+            <div class="px-alts-wrap">
+              <span class="px-alts-label">Other meanings (click to switch)</span>
+              <div class="px-alts-list">
+                ${activeAlternatives
+                  .map(
+                    (alt, idx) =>
+                      `<button type="button" class="px-alt-chip" data-alt-idx="${idx}">${escapeHtml(alt)}</button>`
+                  )
+                  .join('')}
+              </div>
+            </div>
+          `
+          : '';
+
       popover.innerHTML = `
         <div class="px-header">
           <div class="px-source-wrap">
@@ -660,8 +786,15 @@ export class ContentHighlighterController {
               ${escapeHtml(result.sourceText)}
             </span>
             ${
-              result.phonetic
-                ? `<span class="px-phonetic">${escapeHtml(result.phonetic)}</span>`
+              result.phonetic || metaBadges.length > 0
+                ? `<div class="px-meta-row">
+                    ${
+                      result.phonetic
+                        ? `<span class="px-phonetic">${escapeHtml(result.phonetic)}</span>`
+                        : ''
+                    }
+                    ${metaBadges.join('')}
+                  </div>`
                 : ''
             }
           </div>
@@ -675,8 +808,9 @@ export class ContentHighlighterController {
           </div>
         </div>
         <div class="px-meaning-box">
-          ${escapeHtml(result.translatedText)}
+          ${escapeHtml(activeMeaning)}
         </div>
+        ${altChipsHtml}
         <div class="px-footer">
           <span class="px-pill-badge">
             ${
@@ -701,13 +835,41 @@ export class ContentHighlighterController {
         .querySelector('[data-action="close"]')
         ?.addEventListener('click', () => this.clearSelectionPopover());
 
+      popover.querySelectorAll<HTMLButtonElement>('[data-alt-idx]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const idx = Number(btn.dataset.altIdx);
+          const chosen = activeAlternatives[idx];
+          if (!chosen) return;
+
+          const prev = activeMeaning;
+          activeMeaning = chosen;
+          activeAlternatives = [
+            prev,
+            ...activeAlternatives.filter((_, i) => i !== idx),
+          ].slice(0, 5);
+
+          if (savedFlag) {
+            this.settings = await updateVocabItemMeaning(
+              window.location.href,
+              result.sourceText,
+              activeMeaning
+            );
+            this.applyPageHighlights();
+          }
+          renderSavedState(savedFlag);
+        });
+      });
+
       popover
         .querySelector('[data-action="save"]')
         ?.addEventListener('click', async () => {
           const saved = await saveVocabItem({
             sourceText: result.sourceText,
-            translatedText: result.translatedText,
+            translatedText: activeMeaning,
             phonetic: result.phonetic,
+            partOfSpeech: result.partOfSpeech,
+            contextSentence: selectionContext?.contextSentence,
+            alternativeMeanings: activeAlternatives,
             targetLang: result.targetLang,
             pageUrl: window.location.href,
             pageTitle: document.title,
@@ -757,9 +919,16 @@ export class ContentHighlighterController {
       <div class="px-header">
         <div class="px-source-wrap">
           <span class="px-source-word" title="${escapeHtml(item.sourceText)}">${escapeHtml(item.sourceText)}</span>
-          <span class="px-phonetic" data-role="ipa" ${item.phonetic ? '' : 'style="display:none;"'}>${
-            item.phonetic ? escapeHtml(item.phonetic) : ''
-          }</span>
+          <div class="px-meta-row">
+            <span class="px-phonetic" data-role="ipa" ${item.phonetic ? '' : 'style="display:none;"'}>${
+              item.phonetic ? escapeHtml(item.phonetic) : ''
+            }</span>
+            ${
+              item.partOfSpeech
+                ? `<span class="px-pos-badge">${escapeHtml(item.partOfSpeech)}</span>`
+                : ''
+            }
+          </div>
         </div>
         <div style="display: flex; align-items: center; gap: 5px;">
           <button type="button" class="px-icon-btn" data-action="speak" title="Pronounce">
@@ -893,7 +1062,8 @@ export class ContentHighlighterController {
         const rect = range.getBoundingClientRect();
         if (rect.width === 0 && rect.height === 0) return;
 
-        this.showTranslationPopup(text, rect);
+        const selectionContext = extractSelectionContext(range, text);
+        this.showTranslationPopup(text, rect, false, selectionContext);
       }, 15);
     });
 
@@ -984,6 +1154,21 @@ export class ContentHighlighterController {
 
     if (api?.runtime?.onMessage) {
       api.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+        if (message?.type === 'GET_SELECTION_CONTEXT') {
+          const selection = window.getSelection();
+          const text = selection?.toString().trim() || '';
+          if (text && selection && selection.rangeCount > 0) {
+            const ctx = extractSelectionContext(selection.getRangeAt(0), text);
+            sendResponse({
+              contextSentence: ctx.contextSentence,
+              contextParagraph: ctx.contextParagraph,
+            });
+          } else {
+            sendResponse({});
+          }
+          return false;
+        }
+
         if (message?.type === 'GET_PAGE_METRICS') {
           const text = document.body?.innerText || '';
           const words = text

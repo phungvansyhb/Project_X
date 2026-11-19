@@ -61,3 +61,22 @@
      - Embed the hero cover banner in `README.md` and reference store asset specs in `aidlc-docs/operations/store-listing.md`.
 - **Verification Gate**: Run `npm run typecheck && npm run build`, verify `dist/manifest.json`, `dist/icons/*.png` dimensions (`16/32/48/128`), `docs/assets/*.png` dimensions (`1400×560`, `440×280`), HTML titles, and built JS bundles with zero errors.
 
+---
+
+### [x] `UNIT-06`: Context-Aware Word Translation & Disambiguation Engine
+- **Goal**: Dramatically increase word/phrase translation accuracy by extracting surrounding paragraph context from the DOM and passing it to all supported translation engines (Google Translate Free, Gemini, OpenAI, DeepL), while displaying part-of-speech, quick-switch alternative meanings in the popup, and saving the context sentence in the Side Panel.
+- **Files to Create / Modify**:
+  1. `src/shared/storage.ts` — Add optional `partOfSpeech`, `contextSentence`, `alternativeMeanings` to `VocabItem`; add `enableContextTranslation: boolean` (default `true`) to `ExtensionSettings`; update `saveVocabItem`.
+  2. `src/content/contextExtractor.ts` *(new)* — Smart DOM context extractor: locates nearest semantic block (`p`, `li`, `blockquote`, `div`, etc.), computes exact selection offset to handle repeated words, splits sentences (abbreviation-aware), and returns `contextSentence` (≤240 chars) + `contextParagraph` (target sentence ±1 neighbor, ≤400 chars). Skips word-in-context mode for long selections (>8 words or >80 chars).
+  3. `src/shared/messaging.ts` & `src/background/index.ts` — Pass `contextSentence` & `contextParagraph` in `TRANSLATE_TEXT`; add `GET_SELECTION_CONTEXT` message so right-click context menu also captures surrounding context.
+  4. `src/background/translator.ts` — Upgrade all 4 engines:
+     - **Gemini & OpenAI**: Structured JSON prompt with selected word, surrounding paragraph (~400 chars), and page title → returns `{ meaning, partOfSpeech, alternatives }`.
+     - **DeepL**: Pass official non-billed `context` parameter to `/v2/translate`.
+     - **Google Translate Free**: Request `dt=t&dt=bd&dt=at` for POS & candidate meanings + parallel bracketed-sentence contextual disambiguation (`«word»`) with safe validation, sentence-match heuristic fallback, and deduplicated `alternativeMeanings`.
+  5. `src/content/index.ts` — Extract context on `mouseup`, show `partOfSpeech` + `Context` badge and 1-click `alternativeMeanings` chips in Shadow DOM popup (clicking a chip updates meaning & saved item), and show `partOfSpeech` in hover tooltip.
+  6. `src/sidepanel/SidePanelApp.tsx` — Display `partOfSpeech` badge and saved `contextSentence` quote (with target word bolded) on vocab cards; include `contextSentence` in search filter.
+  7. `src/options/OptionsApp.tsx` — Add **Context-Aware Translation** toggle in Translator & Highlight settings.
+  8. `src/dev/main.tsx` — Add polysemous sample sentences to the interactive Dev Workbench article for testing.
+- **Verification Gate**: `npm run typecheck && npm run build` passes with 0 errors; verify context extraction edge cases, Google/LLM response parsing, UI popup alternative-meaning switching, and Side Panel context display.
+
+

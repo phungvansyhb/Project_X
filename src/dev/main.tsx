@@ -81,6 +81,12 @@ const InteractiveArticleSimulator: React.FC = () => {
           Revisit the article anytime to see your words still glowing—or export your deck to{' '}
           <strong>Excel (.xlsx)</strong> in one click.
         </p>
+        <p>
+          <strong>Context-Aware Accuracy Demo:</strong> After we walked along the mossy river{' '}
+          <strong>bank</strong> at sunrise, we stopped by the central <strong>bank</strong> to open
+          a savings account. Later that afternoon, engineers had to <strong>run</strong> a database
+          migration before heading out for a quick <strong>run</strong> in the park.
+        </p>
       </article>
     </div>
   );
