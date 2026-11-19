@@ -434,3 +434,32 @@
 - **Artifacts & Files Updated**:
   - [`aidlc-docs/audit.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/audit.md) — Appended Prompt 29 audit entry prior to committing.
 - **Verification & Gate Status**: Staging, committing, and pushing to `origin/main`.
+
+---
+
+## [2026-11-18T23:21:00-08:00] — Prompt 30: Investigate & Fix Missing Selection Popup on Iframe-Rendered Pages (e.g., Kaggle Tutorial Tab)
+- **Phase / Stage**: `OPERATIONS / Cross-Frame & Selection Reliability Bugfix`
+- **User Input**: `"có 1 số trang mà khi bôi text popup không hiện lên ví dụ trang Kaggle Pipelines (https://www.kaggle.com/code/alexisbcook/pipelines) ở nội dung tab tutorial, hãy điều tra nguyên nhân tại sao và sửa lỗi"`
+- **Clarifications / Decisions**:
+  - **Root Cause Analysis**:
+    1. **Missing iframe content script injection (primary cause on Kaggle)**: Kaggle renders notebook/tutorial content inside a cross-origin / sandboxed `<iframe>` (`kaggleusercontent.com` / `srcdoc`). `public/manifest.json` did not declare `"all_frames": true`, `"match_about_blank": true`, or `"match_origin_as_fallback": true`, so `content.js` was only injected into the top-level shell and never into the notebook iframe.
+    2. **Iframe URL/title mismatch**: When injected into subframes, using `window.location.href` / `document.title` would store vocabulary under the iframe URL instead of the top-level tab URL, breaking "This Page" Side Panel grouping and reload highlight persistence.
+    3. **Host-page `stopPropagation()` & edge-case selections**: Bubble-phase `mouseup`/`mousedown` listeners could be blocked by web apps calling `e.stopPropagation()`; selections inside open Shadow DOMs, keyboard selections (`Shift + Arrows`), or ranges whose `getBoundingClientRect()` returns `0x0` could also miss popup rendering.
+    4. **Multi-frame message races**: With `all_frames: true`, `GET_PAGE_METRICS`, `GET_SELECTION_CONTEXT`, and `SCROLL_TO_VOCAB` needed frame-aware routing/guards so empty subframes do not win response races.
+- **Artifacts & Files Updated**:
+  - [`public/manifest.json`](file:///home/antigravity/phungvansyhb/Project_X/public/manifest.json) — Added `"all_frames": true`, `"match_about_blank": true`, and `"match_origin_as_fallback": true` to `content_scripts`.
+  - [`src/shared/messaging.ts`](file:///home/antigravity/phungvansyhb/Project_X/src/shared/messaging.ts) — Added `GET_TAB_CONTEXT` message type and exported `requestTabContext()`.
+  - [`src/background/index.ts`](file:///home/antigravity/phungvansyhb/Project_X/src/background/index.ts) — Added `GET_TAB_CONTEXT` handler, prioritized `sender.tab.url`/`sender.tab.title` for subframe `TRANSLATE_TEXT` requests, and targeted `info.frameId` in `contextMenus.onClicked` when calling `GET_SELECTION_CONTEXT`.
+  - [`src/content/index.ts`](file:///home/antigravity/phungvansyhb/Project_X/src/content/index.ts) — Resolved canonical top-level tab URL/title in subframes via `requestTabContext()`, upgraded `mouseup`/`mousedown`/`keyup` to capture-phase listeners, added open Shadow DOM selection fallback (with synchronous `composedPath()` capture), added `getSelectionAnchorRect` fallback (`getClientRects()` / cursor coordinates), ensured Shadow DOM host stays mounted at max `z-index` with responsive width, and guarded multi-frame `onMessage` handlers.
+  - [`aidlc-docs/aidlc-state.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/aidlc-state.md) & [`aidlc-docs/audit.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/audit.md) — Updated state and appended Prompt 30 audit entry.
+- **Verification & Gate Status**: `npm run typecheck` and `npm run build` passed with 0 errors; verified `dist/manifest.json` contains `all_frames`, `match_about_blank`, and `match_origin_as_fallback`.
+
+---
+
+## [2026-11-19T01:16:05-08:00] — Prompt 31: Commit & Push Iframe & Capture-Phase Selection Popup Bugfix
+- **Phase / Stage**: `OPERATIONS / Version Control Checkpoint`
+- **User Input**: `"commit và push"`
+- **Clarifications / Decisions**: Stage, commit, and push the cross-origin/sandboxed iframe injection (`all_frames`, `match_about_blank`, `match_origin_as_fallback`), canonical top-level tab URL/title resolution, capture-phase selection listeners, open Shadow DOM & keyboard selection fallback, multi-frame message guards, and updated AI-DLC tracking docs to `origin/main`.
+- **Artifacts & Files Updated**:
+  - [`aidlc-docs/audit.md`](file:///home/antigravity/phungvansyhb/Project_X/aidlc-docs/audit.md) — Appended Prompt 31 audit entry prior to committing.
+- **Verification & Gate Status**: Staging, committing, and pushing to `origin/main`.

@@ -4,8 +4,8 @@
 - **Project Name**: LingoGlow (formerly Project X) — Instant Web Translator & Smart Vocab Highlighter
 - **Project Type**: Brownfield (MV3 Vite + React 19 + TypeScript Vocabulary Translator & Highlighter with **Claymorphism UI**)
 - **Active Phase**: `OPERATIONS` (`UNIT-01` → `UNIT-06` Completed & Verified)
-- **Active Stage**: Completed `UNIT-06` (**Context-Aware Word Translation & Disambiguation Engine**) — Verified via TypeScript check, Vite build & unit assertions
-- **Last Updated**: `2026-11-18T22:36:40-08:00`
+- **Active Stage**: Bugfix — Cross-Origin / Sandboxed Iframe & Capture-Phase Selection Popup Support (Kaggle Notebook Tutorial & SPAs) — Verified via TypeScript check & Vite build
+- **Last Updated**: `2026-11-18T23:21:00-08:00`
 
 ---
 

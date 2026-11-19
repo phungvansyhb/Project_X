@@ -95,8 +95,18 @@ if (api?.runtime?.onMessage) {
             return;
           }
 
-          const pageUrl = message.pageUrl || sender?.tab?.url || 'https://web.article';
-          const pageTitle = message.pageTitle || sender?.tab?.title || 'Web Article';
+          const isSubframe =
+            typeof sender?.frameId === 'number' && sender.frameId !== 0;
+          const pageUrl =
+            (isSubframe ? sender?.tab?.url : undefined) ||
+            message.pageUrl ||
+            sender?.tab?.url ||
+            'https://web.article';
+          const pageTitle =
+            (isSubframe ? sender?.tab?.title : undefined) ||
+            message.pageTitle ||
+            sender?.tab?.title ||
+            'Web Article';
           const contextSentence =
             typeof message.contextSentence === 'string'
               ? message.contextSentence.trim() || undefined
@@ -143,6 +153,15 @@ if (api?.runtime?.onMessage) {
       return true; // Keep message channel open for async response
     }
 
+    if (message?.type === 'GET_TAB_CONTEXT') {
+      sendResponse({
+        ok: true,
+        pageUrl: sender?.tab?.url,
+        pageTitle: sender?.tab?.title,
+      });
+      return false;
+    }
+
     if (message?.type === 'FETCH_IPA') {
       (async () => {
         try {
@@ -182,9 +201,15 @@ if (api?.contextMenus?.onClicked) {
 
       if (tab?.id && api.tabs?.sendMessage) {
         try {
-          const ctxRes = (await api.tabs.sendMessage(tab.id, {
-            type: 'GET_SELECTION_CONTEXT',
-          })) as { contextSentence?: string; contextParagraph?: string } | undefined;
+          const ctxRes = (await (typeof info.frameId === 'number'
+            ? api.tabs.sendMessage(
+                tab.id,
+                { type: 'GET_SELECTION_CONTEXT' },
+                { frameId: info.frameId }
+              )
+            : api.tabs.sendMessage(tab.id, {
+                type: 'GET_SELECTION_CONTEXT',
+              }))) as { contextSentence?: string; contextParagraph?: string } | undefined;
           contextSentence = ctxRes?.contextSentence;
           contextParagraph = ctxRes?.contextParagraph;
         } catch {

@@ -18,6 +18,7 @@ export type ExtensionMessage =
       autoSave?: boolean;
     }
   | { type: 'GET_SELECTION_CONTEXT' }
+  | { type: 'GET_TAB_CONTEXT' }
   | { type: 'FETCH_IPA'; text: string }
   | { type: 'GET_ACTIVE_TAB_INFO' }
   | { type: 'HIGHLIGHT_ACTIVE_PAGE'; color?: string }
@@ -140,6 +141,33 @@ export async function requestIpa(text: string): Promise<string | undefined> {
   }
 
   return lookupIpa(cleanText);
+}
+
+/**
+ * Resolves the top-level tab URL and title when running inside an iframe/subframe
+ * so vocabulary highlights and saved items are consistently indexed under the main page URL.
+ */
+export async function requestTabContext(): Promise<{
+  pageUrl?: string;
+  pageTitle?: string;
+}> {
+  const api = getExtensionApi();
+  if (api?.runtime?.sendMessage) {
+    try {
+      const response = (await api.runtime.sendMessage({
+        type: 'GET_TAB_CONTEXT',
+      })) as { ok?: boolean; pageUrl?: string; pageTitle?: string } | undefined;
+      if (response?.ok && response.pageUrl) {
+        return {
+          pageUrl: response.pageUrl,
+          pageTitle: response.pageTitle,
+        };
+      }
+    } catch {
+      // Ignore if background service worker is unavailable
+    }
+  }
+  return {};
 }
 
 export async function getActiveTabInfo(): Promise<ActiveTabInfo> {

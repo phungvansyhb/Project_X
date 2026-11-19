@@ -11,7 +11,7 @@ import {
   HighlightColor,
   STORAGE_KEY,
 } from '../shared/storage';
-import { requestTranslation, requestIpa } from '../shared/messaging';
+import { requestTranslation, requestIpa, requestTabContext } from '../shared/messaging';
 import { extractSelectionContext, SelectionContext } from './contextExtractor';
 
 interface HighlightedRangeEntry {
@@ -127,6 +127,13 @@ function ensureHighlightStylesheet(color: HighlightColor = 'yellow') {
 const SHADOW_CLAY_CSS = `
   :host {
     all: initial;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    z-index: 2147483647;
+    pointer-events: none;
     font-family: 'Plus Jakarta Sans', 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 
@@ -183,15 +190,16 @@ const SHADOW_CLAY_CSS = `
   .px-clay-popover,
   .px-clay-tooltip {
     position: fixed;
-    z-index: 2147483646;
+    z-index: 2147483647;
+    pointer-events: auto;
     background: var(--clay-surface);
     color: var(--clay-text-primary);
     border-radius: 22px;
     padding: 14px 16px;
     box-shadow: var(--clay-shadow-card);
     border: 1px solid rgba(255, 255, 255, 0.55);
-    min-width: 240px;
-    max-width: 340px;
+    min-width: min(240px, calc(100vw - 24px));
+    max-width: min(340px, calc(100vw - 24px));
     animation: pxClayPopIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     box-sizing: border-box;
     line-height: 1.45;
@@ -204,7 +212,8 @@ const SHADOW_CLAY_CSS = `
 
   .px-clay-icon-launcher {
     position: fixed;
-    z-index: 2147483646;
+    z-index: 2147483647;
+    pointer-events: auto;
     width: 38px;
     height: 38px;
     border-radius: 14px;
@@ -455,6 +464,7 @@ const SHADOW_CLAY_CSS = `
 export class ContentHighlighterController {
   private settings: ExtensionSettings | null = null;
   private activeRanges: HighlightedRangeEntry[] = [];
+  private shadowHost: HTMLDivElement | null = null;
   private shadowRoot: ShadowRoot | null = null;
   private rootContainer: HTMLDivElement | null = null;
   private selectionPopoverEl: HTMLDivElement | null = null;
@@ -463,15 +473,57 @@ export class ContentHighlighterController {
   private hoverHideTimer: number | null = null;
   private isPointerInsideTooltip = false;
   private rafPending = false;
-  private scanScope: HTMLElement;
+  private scanScope: HTMLElement | null;
+  private readonly isTopFrame: boolean;
+  private resolvedTabUrl: string | null = null;
+  private resolvedTabTitle: string | null = null;
 
   constructor(scanScope?: HTMLElement) {
     this.scanScope = scanScope || document.body;
+    this.isTopFrame = (() => {
+      try {
+        return window === window.top;
+      } catch {
+        return false;
+      }
+    })();
+  }
+
+  private getEffectivePageUrl(): string {
+    if (this.isTopFrame) {
+      return window.location.href;
+    }
+    if (this.resolvedTabUrl) {
+      return this.resolvedTabUrl;
+    }
+    if (document.referrer && /^https?:\/\//i.test(document.referrer)) {
+      return document.referrer;
+    }
+    return window.location.href;
+  }
+
+  private getEffectivePageTitle(): string {
+    if (this.isTopFrame) {
+      return document.title;
+    }
+    return this.resolvedTabTitle || document.title || 'Web Article';
   }
 
   public async init() {
+    if (!document.documentElement) return;
     this.mountShadowHost();
     this.settings = await getSettings();
+
+    if (!this.isTopFrame) {
+      const tabCtx = await requestTabContext();
+      if (tabCtx.pageUrl) {
+        this.resolvedTabUrl = tabCtx.pageUrl;
+      }
+      if (tabCtx.pageTitle) {
+        this.resolvedTabTitle = tabCtx.pageTitle;
+      }
+    }
+
     this.syncThemeOnShadow();
     this.applyPageHighlights();
     this.attachEventListeners();
@@ -484,6 +536,7 @@ export class ContentHighlighterController {
   }
 
   private mountShadowHost() {
+    if (!document.documentElement) return;
     let host = document.getElementById(SHADOW_HOST_ID) as HTMLDivElement | null;
     if (!host) {
       host = document.createElement('div');
@@ -491,6 +544,7 @@ export class ContentHighlighterController {
       document.documentElement.appendChild(host);
     }
 
+    this.shadowHost = host;
     this.shadowRoot = host.shadowRoot || host.attachShadow({ mode: 'open' });
     this.shadowRoot.innerHTML = '';
 
@@ -501,6 +555,13 @@ export class ContentHighlighterController {
     this.rootContainer = document.createElement('div');
     this.rootContainer.className = 'px-clay-root';
     this.shadowRoot.appendChild(this.rootContainer);
+  }
+
+  private ensureShadowMounted() {
+    if (!this.shadowHost?.isConnected || !this.rootContainer) {
+      this.mountShadowHost();
+      this.syncThemeOnShadow();
+    }
   }
 
   private syncThemeOnShadow() {
@@ -520,7 +581,7 @@ export class ContentHighlighterController {
     if (!this.settings) return;
     ensureHighlightStylesheet(this.settings.highlightColor);
 
-    const vocabList = getVocabForPage(this.settings, window.location.href);
+    const vocabList = getVocabForPage(this.settings, this.getEffectivePageUrl());
     this.activeRanges = [];
 
     const cssHighlights = (
@@ -648,6 +709,7 @@ export class ContentHighlighterController {
     forceTranslateAndSave = false,
     selectionContext?: SelectionContext
   ) {
+    this.ensureShadowMounted();
     if (!this.rootContainer || !this.settings) return;
     this.clearSelectionPopover();
     this.clearHoverTooltip();
@@ -713,10 +775,13 @@ export class ContentHighlighterController {
       forceTranslateAndSave ||
       (mode === 'auto' && this.settings.autoTranslateOnSelect);
 
+    const effectivePageUrl = this.getEffectivePageUrl();
+    const effectivePageTitle = this.getEffectivePageTitle();
+
     const response = await requestTranslation({
       text: selectedText,
-      pageUrl: window.location.href,
-      pageTitle: document.title,
+      pageUrl: effectivePageUrl,
+      pageTitle: effectivePageTitle,
       contextSentence: selectionContext?.contextSentence,
       contextParagraph: selectionContext?.contextParagraph,
       autoSave: shouldAutoSave,
@@ -850,7 +915,7 @@ export class ContentHighlighterController {
 
           if (savedFlag) {
             this.settings = await updateVocabItemMeaning(
-              window.location.href,
+              this.getEffectivePageUrl(),
               result.sourceText,
               activeMeaning
             );
@@ -871,8 +936,8 @@ export class ContentHighlighterController {
             contextSentence: selectionContext?.contextSentence,
             alternativeMeanings: activeAlternatives,
             targetLang: result.targetLang,
-            pageUrl: window.location.href,
-            pageTitle: document.title,
+            pageUrl: this.getEffectivePageUrl(),
+            pageTitle: this.getEffectivePageTitle(),
           });
           this.settings = saved.settings;
           this.applyPageHighlights();
@@ -883,7 +948,7 @@ export class ContentHighlighterController {
         .querySelector('[data-action="remove"]')
         ?.addEventListener('click', async () => {
           this.settings = await removeVocabItem(
-            window.location.href,
+            this.getEffectivePageUrl(),
             result.sourceText
           );
           this.applyPageHighlights();
@@ -898,6 +963,7 @@ export class ContentHighlighterController {
    * Renders the Claymorphism Hover Meaning Tooltip when hovering a ::highlight(project-x-vocab) word
    */
   private showHoverTooltip(item: VocabItem, rect: DOMRect) {
+    this.ensureShadowMounted();
     if (!this.rootContainer) return;
     if (this.hoveredWordId === item.id && this.hoverTooltipEl) return;
 
@@ -984,7 +1050,7 @@ export class ContentHighlighterController {
       ?.addEventListener('click', async (e) => {
         e.stopPropagation();
         this.settings = await removeVocabItem(
-          window.location.href,
+          this.getEffectivePageUrl(),
           item.sourceText
         );
         this.applyPageHighlights();
@@ -1033,46 +1099,158 @@ export class ContentHighlighterController {
     return true;
   }
 
-  private attachEventListeners() {
-    // 1. Selection listener (mouseup)
-    document.addEventListener('mouseup', (e) => {
-      const target = e.target as Node | null;
-      if (target && target instanceof Element) {
-        if (target.closest(`#${SHADOW_HOST_ID}`)) return;
-        if (
-          target.closest('input, textarea, select, [contenteditable="true"]')
-        ) {
-          return;
-        }
-        // In Dev Workbench, only trigger selection popup inside [data-px-article] if present
-        const workbenchArticle = document.querySelector('[data-px-article]');
-        if (workbenchArticle && !workbenchArticle.contains(target)) {
-          return;
+  private isEventInsideShadowHost(e: Event): boolean {
+    if (this.shadowHost && typeof e.composedPath === 'function') {
+      const path = e.composedPath();
+      if (path.includes(this.shadowHost)) return true;
+    }
+    const target = e.target as Node | null;
+    const el = target instanceof Element ? target : target?.parentElement;
+    return Boolean(el?.closest(`#${SHADOW_HOST_ID}`));
+  }
+
+  private isEditableTarget(target: EventTarget | null): boolean {
+    if (!target) return false;
+    const node = target as Node;
+    const el = node instanceof Element ? node : node.parentElement;
+    if (!el) return false;
+    return Boolean(
+      el.closest('input, textarea, select, [contenteditable="true"], [contenteditable=""]')
+    );
+  }
+
+  private getActiveSelection(composedPath?: EventTarget[]): Selection | null {
+    const winSel = window.getSelection();
+    if (winSel && winSel.toString().trim().length > 0 && winSel.rangeCount > 0) {
+      return winSel;
+    }
+
+    // Fallback for text selected inside an open Shadow DOM on the host page
+    if (composedPath) {
+      for (const node of composedPath) {
+        if (node instanceof ShadowRoot) {
+          const shadowSel = (
+            node as ShadowRoot & { getSelection?: () => Selection | null }
+          ).getSelection?.();
+          if (
+            shadowSel &&
+            shadowSel.toString().trim().length > 0 &&
+            shadowSel.rangeCount > 0
+          ) {
+            return shadowSel;
+          }
         }
       }
+    }
 
-      window.setTimeout(() => {
-        const selection = window.getSelection();
-        const text = selection?.toString().trim() || '';
-        if (!text || text.length < 2 || text.length > 240) {
-          return;
+    return winSel;
+  }
+
+  private getSelectionAnchorRect(
+    range: Range,
+    fallbackEvent?: MouseEvent
+  ): DOMRect | null {
+    const bounding = range.getBoundingClientRect();
+    if (bounding.width > 0 || bounding.height > 0) {
+      return bounding;
+    }
+
+    const clientRects = range.getClientRects();
+    for (let i = 0; i < clientRects.length; i++) {
+      const r = clientRects[i];
+      if (r.width > 0 || r.height > 0) {
+        return r;
+      }
+    }
+
+    if (
+      fallbackEvent &&
+      (fallbackEvent.clientX > 0 || fallbackEvent.clientY > 0)
+    ) {
+      return new DOMRect(fallbackEvent.clientX, fallbackEvent.clientY, 1, 16);
+    }
+
+    return null;
+  }
+
+  private scheduleSelectionCheck(e: Event, mouseEvent?: MouseEvent) {
+    if (this.isEventInsideShadowHost(e)) return;
+    if (this.isEditableTarget(e.target)) return;
+
+    const target = e.target as Node | null;
+    const targetEl = target instanceof Element ? target : target?.parentElement;
+    // In Dev Workbench, only trigger selection popup inside [data-px-article] if present
+    const workbenchArticle = document.querySelector('[data-px-article]');
+    if (workbenchArticle && targetEl && !workbenchArticle.contains(targetEl)) {
+      return;
+    }
+
+    // Capture composedPath synchronously (it is cleared after event dispatch ends)
+    const composedPath =
+      typeof e.composedPath === 'function' ? e.composedPath() : undefined;
+
+    window.setTimeout(() => {
+      const selection = this.getActiveSelection(composedPath);
+      const text = selection?.toString().trim() || '';
+      if (!text || text.length < 2 || text.length > 240) {
+        return;
+      }
+      if (!selection || selection.rangeCount === 0) return;
+
+      const range = selection.getRangeAt(0);
+      if (
+        this.isEditableTarget(range.startContainer) ||
+        this.isEditableTarget(range.endContainer)
+      ) {
+        return;
+      }
+
+      const rect = this.getSelectionAnchorRect(range, mouseEvent);
+      if (!rect) return;
+
+      const selectionContext = extractSelectionContext(range, text);
+      this.showTranslationPopup(text, rect, false, selectionContext);
+    }, 15);
+  }
+
+  private attachEventListeners() {
+    // 1. Selection listener (mouseup in capture phase so host-page stopPropagation() cannot block it)
+    document.addEventListener(
+      'mouseup',
+      (e) => {
+        if (e.button !== 0) return;
+        this.scheduleSelectionCheck(e, e);
+      },
+      true
+    );
+
+    // 1b. Keyboard selection listener (Shift + Arrow / Home / End / PageUp / PageDown)
+    document.addEventListener(
+      'keyup',
+      (e) => {
+        if (
+          e.shiftKey &&
+          (e.key.startsWith('Arrow') ||
+            e.key === 'Home' ||
+            e.key === 'End' ||
+            e.key === 'PageUp' ||
+            e.key === 'PageDown')
+        ) {
+          this.scheduleSelectionCheck(e);
         }
-        if (!selection || selection.rangeCount === 0) return;
-        const range = selection.getRangeAt(0);
-        const rect = range.getBoundingClientRect();
-        if (rect.width === 0 && rect.height === 0) return;
+      },
+      true
+    );
 
-        const selectionContext = extractSelectionContext(range, text);
-        this.showTranslationPopup(text, rect, false, selectionContext);
-      }, 15);
-    });
-
-    // Close selection popover when clicking elsewhere
-    document.addEventListener('mousedown', (e) => {
-      const target = e.target as Element | null;
-      if (target?.closest(`#${SHADOW_HOST_ID}`)) return;
-      this.clearSelectionPopover();
-    });
+    // Close selection popover when clicking elsewhere (capture phase so clicks inside stopPropagation containers still dismiss)
+    document.addEventListener(
+      'mousedown',
+      (e) => {
+        if (this.isEventInsideShadowHost(e)) return;
+        this.clearSelectionPopover();
+      },
+      true
+    );
 
     // 2. Throttled mousemove listener for CSS.highlights Range hover hit-testing
     document.addEventListener(
@@ -1163,13 +1341,14 @@ export class ContentHighlighterController {
               contextSentence: ctx.contextSentence,
               contextParagraph: ctx.contextParagraph,
             });
-          } else {
+          } else if (this.isTopFrame) {
             sendResponse({});
           }
           return false;
         }
 
         if (message?.type === 'GET_PAGE_METRICS') {
+          if (!this.isTopFrame) return false;
           const text = document.body?.innerText || '';
           const words = text
             .trim()
@@ -1197,13 +1376,17 @@ export class ContentHighlighterController {
             el.style.backgroundColor = `${color}18`;
             el.style.paddingLeft = '8px';
           });
-          sendResponse({ ok: true, count: headings.length });
+          if (this.isTopFrame) {
+            sendResponse({ ok: true, count: headings.length });
+          }
           return false;
         }
 
         if (message?.type === 'SCROLL_TO_VOCAB' && message.sourceText) {
           const scrolled = this.scrollToWord(String(message.sourceText));
-          sendResponse({ ok: scrolled });
+          if (scrolled) {
+            sendResponse({ ok: true });
+          }
           return false;
         }
 
@@ -1213,12 +1396,16 @@ export class ContentHighlighterController {
               this.settings = s;
               this.syncThemeOnShadow();
               this.applyPageHighlights();
-              sendResponse({ ok: true });
+              if (this.isTopFrame) {
+                sendResponse({ ok: true });
+              }
             })
             .catch(() => {
-              sendResponse({ ok: false });
+              if (this.isTopFrame) {
+                sendResponse({ ok: false });
+              }
             });
-          return true;
+          return this.isTopFrame;
         }
 
         return false;
